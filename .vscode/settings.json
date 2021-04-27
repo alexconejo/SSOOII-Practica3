@@ -8,7 +8,6 @@
         "chrono": "cpp",
         "clocale": "cpp",
         "cmath": "cpp",
-        "condition_variable": "cpp",
         "cstdarg": "cpp",
         "cstddef": "cpp",
         "cstdint": "cpp",
