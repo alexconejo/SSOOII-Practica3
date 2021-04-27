@@ -11,7 +11,6 @@
  * *********************************************************/
 
 #include "../include/ColaProtegida.h"
-#include "../src/Cliente.cpp"
 #include <string>
 #include <queue>
 #include <signal.h>

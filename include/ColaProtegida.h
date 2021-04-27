@@ -12,7 +12,7 @@
 #include <string>
 #include <mutex>
 #include <queue>
-#include "../src/Cliente.cpp"
+#include "../src/ClientePL.cpp"
 
 class ColaProtegida 
     {
