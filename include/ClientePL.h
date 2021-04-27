@@ -6,12 +6,13 @@
  * Author          : Álex Conejo
  * 
  * Purpose         : Contiene la estructura del objeto Cliente
- *                   Premium Limitado.
+ *                   Premium con saldo limitado.
  * *********************************************************/
 
 #include <iostream>
 #include <vector>
 #include "../src/Cliente.cpp"
+#include <string>
 
 class ClientePL : public Cliente
     {
@@ -20,6 +21,7 @@ class ClientePL : public Cliente
 
     public:
 
+        ClientePL(int client_id, std::string category, int saldo);
         int GetSaldo();
         void SetSaldo(int s);
         

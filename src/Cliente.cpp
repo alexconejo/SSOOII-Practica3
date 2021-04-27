@@ -9,8 +9,15 @@
  *                   un id de cliente y una categoría. 
  * *********************************************************/
 
+#pragma once //Para los errores de duplicacion de include
 #include "../include/Cliente.h"
 #include <string>
+
+// Constructor
+Cliente::Cliente(int client_id, std::string category){
+    this -> client_id = client_id; 
+    this -> category = category;
+}
 
 // Getter del id del cliente
 int Cliente::GetClientId() { return client_id; }

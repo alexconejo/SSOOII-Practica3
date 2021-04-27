@@ -14,12 +14,18 @@
 #include <queue>
 #include "../src/ClientePL.cpp"
 
+
 class ColaProtegida 
     {
     private: 
         std::mutex semaforo;
-
+        std::queue <ClientePL> protected_queue;
+        bool empty;
+        
     public:
-        std::queue <Cliente> Introduce(std::queue <Cliente> client_queue);
-        std::queue <Cliente> TakeOut(std::queue <Cliente> client_queue);   
+        void Push(ClientePL pl);
+        void Pop();   
+        ClientePL Front();
+        bool Empty();
+        void Recharge(int saldo);
     };

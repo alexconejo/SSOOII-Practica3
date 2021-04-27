@@ -6,21 +6,17 @@
  * Author          : Álex Conejo y César Braojos
  * 
  * Purpose         : Contiene la estructura del objeto Cliente
+ *                   gratuito
  * *********************************************************/
 
 #include <iostream>
 #include <string>
+#include "../src/Cliente.cpp"
 
-class Cliente 
+class ClienteNP : public Cliente
     {
-    private: 
-        int client_id;
-        std::string category;
-   
+  
     public:
-        Cliente(int client_id, std::string category);
-        int GetClientId();
-        std::string GetCategory();
-        void SetClientId(int id);
-        void SetCategory(std::string c);       
+        ClienteNP(int client_id, std::string category);
+    
     };
