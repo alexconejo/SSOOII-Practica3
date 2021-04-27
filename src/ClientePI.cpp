@@ -10,20 +10,11 @@
  *                   categoría y un número máximo de saldo. 
  * *********************************************************/
 
-#include "../include/ClientePL.h"
+#include "../include/ClientePI.h"
 #include <string>
 
 // Constructor
-ClientePL::ClientePL(int client_id, std::string category, int saldo) : Cliente(client_id, category){
-    this -> saldo = saldo; 
-}
+ClientePI::ClientePI(int client_id, std::string category) : Cliente(client_id, category){}
 
-// Getter del id del cliente
-int ClientePL::GetSaldo() { return saldo; }
-
-// Setter del id del cliente
-void ClientePL::SetSaldo(int s){
-    saldo = s;
-}
 
 
