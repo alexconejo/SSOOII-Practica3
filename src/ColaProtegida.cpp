@@ -16,7 +16,7 @@
 #include <signal.h>
 
 // Introduce datos a la cola.
-void ColaProtegida::Push(ClientePL pl){ 
+void ColaProtegida::Push(Cliente pl){ 
     std::unique_lock<std::mutex> ul (semaforo);
     protected_queue.push(pl);
     ul.unlock();
@@ -30,16 +30,16 @@ void ColaProtegida::Pop() {
     ul.unlock();
 }
 
-ClientePL ColaProtegida::Front() {
+Cliente ColaProtegida::Front() {
     std::unique_lock<std::mutex> ul (semaforo);
-    ClientePL pl(protected_queue.front().GetClientId(), protected_queue.front().GetCategory(), protected_queue.front().GetSaldo());
+    Cliente pl(protected_queue.front().GetClientId(), protected_queue.front().GetCategory());
     ul.unlock();
     return pl;
 }
 
 void ColaProtegida::Recharge(int saldo) {
     std::unique_lock<std::mutex> ul (semaforo);
-    protected_queue.front().SetSaldo(saldo);
+    //protected_queue.front().SetSaldo(saldo);
     ul.unlock();
 }
 

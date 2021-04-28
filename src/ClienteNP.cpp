@@ -14,7 +14,16 @@
 #include <string>
 
 // Constructor
-ClienteNP::ClienteNP(int client_id, std::string category) : Cliente(client_id, category){}
+ClienteNP::ClienteNP(int client_id, std::string category, int creditos) : Cliente(client_id, category){
+    this -> creditos = creditos;
+}
 
+// Getter del id del cliente
+int ClienteNP::GetCreditos() { return creditos; }
+
+// Setter del id del cliente
+void ClienteNP::SetCreditos(int c){
+    creditos = c;
+}
 
 
