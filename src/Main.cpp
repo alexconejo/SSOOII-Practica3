@@ -14,49 +14,57 @@
 #include "../src/ClientePI.cpp" //Incluimos el cliente premium con saldo ilimitado
 #include "../src/ClienteNP.cpp" //Incluimos el cliente gratuito
 
-#define NUMCLIENTES 100
+#define NUMCLIENTESPL 10
 
 std::condition_variable cv;
 std::mutex turno2;
 std::mutex semaforo;
-std::queue<Cliente> Peticiones_Banco;
+std::queue<ClientePL> Peticiones_Banco;
 ColaProtegida protected_queue;
 int i=0;
 
 void banco()
-{
+{   
     while(1){
         std::unique_lock<std::mutex> ul(semaforo);
         cv.wait(ul,[]{return !protected_queue.Empty();});
         std::this_thread::sleep_for(std::chrono::seconds(1));
         protected_queue.Recharge(1000);
-        //ClientePL pl (protected_queue.Front().GetClientId(), protected_queue.Front().GetCategory(), protected_queue.Front().GetSaldo());
-        std::cout<<"añadimos dinero al cliente " << pl.GetClientId() << " ahora con saldo: " << pl.GetSaldo() <<std::endl;
-        protected_queue.Pop();
-
+        Cliente pl (protected_queue.Front().GetClientId(), protected_queue.Front().GetCategory());
+        std::cout<<"añadimos dinero al cliente " << pl.GetClientId() << " ahora con saldo: " << pl.GetCategory() <<std::endl;
+        protected_queue.Pop();        
     }
 }
  
 
 int main()
-{
+{   
+    int random;
 
-    for (int i= 0; i<NUMCLIENTES;i++){
+    for (int i= 0; i<NUMCLIENTESPL;i++){
+        random = rand() % 3;
+        Cliente c (i, "");
+        switch (random){
+            case 0:
+                c.SetCategory("NP");
+                break;
 
-        ClientePL pl (i, "PL", 0);
-        protected_queue.Push(pl);
+            case 1:                
+                c.SetCategory("PL");
+                break;
+
+            case 2:
+                c.SetCategory("PI");
+                break;
+        }
+        protected_queue.Push(c);
     }
- 
+    
     std::thread thread (banco); 
 
 
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
-    for (int i= NUMCLIENTES; i<NUMCLIENTES + 4;i++){
-        ClientePL pl (i, "PL", 0);
-        protected_queue.Push(pl);
-        cv.notify_one();
-    }
 
     thread.join();
     return 0;

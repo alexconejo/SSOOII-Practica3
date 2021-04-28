@@ -15,8 +15,12 @@
 
 class ClienteNP : public Cliente
     {
-  
+    private:
+        int creditos;
+
     public:
-        ClienteNP(int client_id, std::string category);
+        ClienteNP(int client_id, std::string category, int creditos);
+        int GetCreditos();
+        void SetCreditos (int c);
     
     };

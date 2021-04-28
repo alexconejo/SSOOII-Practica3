@@ -19,13 +19,13 @@ class ColaProtegida
     {
     private: 
         std::mutex semaforo;
-        std::queue <ClientePL> protected_queue;
+        std::queue <Cliente> protected_queue;
         bool empty;
         
     public:
-        void Push(ClientePL pl);
+        void Push(Cliente pl);
         void Pop();   
-        ClientePL Front();
+        Cliente Front();
         bool Empty();
         void Recharge(int saldo);
     };
