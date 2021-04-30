@@ -42,4 +42,14 @@ void Cliente::SetCreditos(int c){
     creditos = c;
 }
 
+void Cliente::Push(std::queue<std::string> l_queue){
+    client_queue.push(l_queue);  
+}
+
+std::queue<std::string> Cliente::Pop(){
+    std::queue<std::string> frontelement = client_queue.front();
+    client_queue.pop();
+    return frontelement;  
+}
+
 
