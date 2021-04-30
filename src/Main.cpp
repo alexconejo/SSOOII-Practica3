@@ -22,22 +22,22 @@ std::condition_variable cv2;
 std::mutex clientes;
 std::mutex semaforo;
 std::mutex replicas;
-std::queue<ClientePL> Peticiones_Banco;
-ColaProtegida protected_queue;
+ColaProtegida peticiones_banco;
 ColaProtegida clientes_premium;
 ColaProtegida clientes_gratuitos;
+ColaProtegida peticiones;
 int g_n=0;
 
 void banco()
 {   
     while(1){
         std::unique_lock<std::mutex> ul(semaforo);
-        cv.wait(ul,[]{return !protected_queue.Empty();});
+        cv.wait(ul,[]{return !peticiones_banco.Empty();});
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        protected_queue.Recharge(1000);
-        Cliente (protected_queue.Front().GetClientId(), protected_queue.Front().GetCategory());
+        peticiones_banco.Recharge(1000);
+        Cliente (peticiones_banco.Front().GetClientId(), peticiones_banco.Front().GetCategory());
         std::cout<<"añadimos dinero al cliente " << pl.GetClientId() << " ahora con saldo: " << pl.GetCategory() <<std::endl;
-        protected_queue.Pop();        
+        peticiones_banco.Pop();      
     }
 }
 void Clientes()
@@ -45,29 +45,29 @@ void Clientes()
 
     int random;
     std::unique_lock<std::mutex> ul(clientes);
-    cv2.wait(ul,[]{return g_n<N;});
+    cv2.wait(ul,[]{return peticiones.size()<N;});
     random = rand() % 10;
     if(!clientes_premium.Empty()&& !clientes_gratuitos.Empty()){
         if(random<=7)
         {
             std::cout<<"busqueda de  la cola premium "<<std::endl;
-            std::thread(SSOOIIGLE,clientes_premium.pop(),palabra)
+            peticiones.Push(clientes_premium.Pop());
         }
         else
         {
             std::cout<<"busqueda de  la cola gratis"<<std::endl;
-            clientes_gratuitos.Pop();
+            peticiones.Push(clientes_gratuitos.Pop());
     }
     }
     else if(clientes_premium.Empty()){
         std::cout<<"busqueda de  la cola gratis con premium vacia"<<std::endl;
-        clientes_gratuitos.Pop();
+        peticiones.Push(clientes_gratuitos.Pop());
 
     }
     else 
     {
     std::cout<<"busqueda de  la cola premium con gratis vacia"<<std::endl;
-        clientes_premium.Pop();
+        peticiones.Push(clientes_premium.Pop());
     }
     
 }
@@ -105,6 +105,7 @@ int main()
         vhilos.push_back(std::thread(Clientes));
     }
 
+    std::thead(SSOOIIGLE, peticiones);
     std::for_each(vhilos.begin(), vhilos.end(), std::mem_fn(&std::thread::join));
     std::this_thread::sleep_for(std::chrono::seconds(10));
 

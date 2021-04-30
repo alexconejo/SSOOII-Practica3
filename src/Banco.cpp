@@ -29,7 +29,7 @@ void banco()
         cv.wait(ul,[]{return !protected_queue.Empty();});
         std::this_thread::sleep_for(std::chrono::seconds(1));
         protected_queue.Recharge(1000);
-        //ClientePL pl (protected_queue.Front().GetClientId(), protected_queue.Front().GetCategory(), protected_queue.Front().GetSaldo());
+        Cliente pl (protected_queue.Front().GetClientId(), protected_queue.Front().GetCategory(), protected_queue.Front().GetSaldo());
         std::cout<<"añadimos dinero al cliente " << pl.GetClientId() << " ahora con saldo: " << pl.GetSaldo() <<std::endl;
         protected_queue.Pop();
 
@@ -42,7 +42,7 @@ int main()
 
     for (int i= 0; i<NUMCLIENTES;i++){
 
-        ClientePL pl (i, "PL", 0);
+        Cliente pl (i, "PL", 0);
         protected_queue.Push(pl);
     }
  
@@ -52,7 +52,7 @@ int main()
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
     for (int i= NUMCLIENTES; i<NUMCLIENTES + 4;i++){
-        ClientePL pl (i, "PL", 0);
+        Cliente pl (i, "PL", 0);
         protected_queue.Push(pl);
         cv.notify_one();
     }

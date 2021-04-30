@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <string>
+#include <queue>
 
 class Cliente 
     {
@@ -17,6 +18,7 @@ class Cliente
         int client_id;
         std::string category;
         int creditos;
+        std::queue<std::queue<std::string>> client_queue;
    
     public:
         Cliente(int client_id, std::string category,int creditos);
@@ -25,5 +27,7 @@ class Cliente
         void SetClientId(int id);
         void SetCategory(std::string c);  
         int GetCreditos();
-        void SetCreditos(int c);     
+        void SetCreditos(int c);    
+        void Push(std::queue<std::string> l_queue);
+        std::queue<std::string> Pop();
     };
