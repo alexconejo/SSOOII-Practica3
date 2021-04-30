@@ -26,8 +26,9 @@
 #include <cctype>   //ispunct
 #include <clocale>  //std::setlocale
 #include <atomic>
+#pragma once
 #include "../src/Main.cpp"
-//#include "../include/color.h" 
+#include "../include/color.h" 
 
 
 #define LIMITE                  1000000
@@ -35,13 +36,13 @@
 
 
 class SSOOIIGLE {
-    public:
+    private:
         std::mutex g_semaforo;
-        std::queue<std::queue<std::string>> g_queue;
-        Cliente cl;
+        std::queue <Cliente> peticiones;
         std::string g_palabra;
 
-    private:
+    public:
+        SSOOIIGLE (std::queue <Cliente> peticiones);
         std::string Simbols(std::string word);
         std::string changeToLowercaseAndEraseSimbols(std::string word);
         std::int16_t CountLines(char* p_fichero );
@@ -52,8 +53,8 @@ class SSOOIIGLE {
         void Busqueda();
 };
 
-SSOOIIGLE :: SSOOIIGLE (Cliente cl){
-    this -> cl = cl;
+SSOOIIGLE :: SSOOIIGLE (std::queue <Cliente> peticiones){
+    this -> peticiones = peticiones;
 }
 /******************************************************
 Metodo para limpiar las palabras de signos de puntuacion delanteros
@@ -266,9 +267,7 @@ void SSOOIIGLE :: Busqueda()
     
     //Creacion de hilos , y llamada diviendo el fichero dependiendo de los hilos 
     SearchWord(p_palabra,p_fichero);
-    SearchWord(p_palabra,p_fichero);
-    SearchWord(p_palabra,p_fichero);
-    SearchWord(p_palabra,p_fichero); 
+
     for(int i=0;i<hilos;i++){
         std::string j =std::__cxx11::to_string(i);
         Print(j,g_queue.size());
