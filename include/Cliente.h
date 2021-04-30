@@ -16,11 +16,14 @@ class Cliente
     private: 
         int client_id;
         std::string category;
+        int creditos;
    
     public:
-        Cliente(int client_id, std::string category);
+        Cliente(int client_id, std::string category,int creditos);
         int GetClientId();
         std::string GetCategory();
         void SetClientId(int id);
-        void SetCategory(std::string c);       
+        void SetCategory(std::string c);  
+        int GetCreditos();
+        void SetCreditos(int c);     
     };

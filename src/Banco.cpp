@@ -11,8 +11,7 @@
 #include <condition_variable>
 
 #include "../src/ColaProtegida.cpp" //Incluimos la cola protegida
-#include "../src/ClientePI.cpp" //Incluimos el cliente premium con saldo ilimitado
-#include "../src/ClienteNP.cpp" //Incluimos el cliente gratuito
+
 
 #define NUMCLIENTES 100
 
