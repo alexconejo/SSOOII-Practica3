@@ -69,7 +69,20 @@ void Clientes()
     std::cout<<"busqueda de  la cola premium con gratis vacia"<<std::endl;
         peticiones.Push(clientes_premium.Pop());
     }
+    while(aux.getencontrado()==false){
+        
+    }
     
+}
+void Busqueda()
+{   
+while(1){ 
+
+peticiones.pop();
+SSOOIIGLE prueba(peticiones.pop() ,word )
+std::thread hilo(SSOOIIGLE, )
+    
+}
 }
 
 
@@ -105,7 +118,7 @@ int main()
         vhilos.push_back(std::thread(Clientes));
     }
 
-    std::thead(SSOOIIGLE, peticiones);
+    std::thead(busqueda, peticiones);
     std::for_each(vhilos.begin(), vhilos.end(), std::mem_fn(&std::thread::join));
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
