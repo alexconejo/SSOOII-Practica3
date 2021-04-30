@@ -51,6 +51,7 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "condition_variable": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "list": "cpp"
     }
 }
