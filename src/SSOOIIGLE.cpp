@@ -200,7 +200,5 @@ void SSOOIIGLE :: Busqueda()
     
     //Creacion de hilos , y llamada diviendo el fichero dependiendo de los hilos 
     SearchWord(g_palabra,"utils/books/21_leyes_del_liderazgo.txt");
-    std::cout<< "hola, el cliente tiene el id " << cliente.GetClientId() <<std::endl;
-
-  
+    std::cout<<"cliente " <<cliente.GetClientId() << " ha llegado aquí" <<std::endl;
 }
