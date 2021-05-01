@@ -27,6 +27,7 @@
 #include <clocale>  //std::setlocale
 #include <atomic>
 #pragma once
+#include "../src/Cliente.cpp" //Incluimos el cliente gratuito
 #include "../include/color.h" 
 
 
@@ -46,7 +47,7 @@ class SSOOIIGLE {
         std::string changeToLowercaseAndEraseSimbols(std::string word);
         std::int16_t CountLines(char* p_fichero );
         void Print(std::string id,int size);
-        void SearchWord(int id ,char* p_palabra ,char* p_fichero);
+        void SearchWord(std::string p_palabra ,char* p_fichero);
         void messageWelcome();
         void messageEnd();
         void Busqueda();
@@ -119,46 +120,13 @@ std::int16_t SSOOIIGLE :: CountLines(char* p_fichero ){
 Metodo para imprimir y ordenar la salida
 
 *****************************************************/
-void SSOOIIGLE :: Print(std::string id,int size)
-{
-int                                 i       =0;
-std::queue<std::queue<std::string>> aux     =g_queue;
-while(!aux.empty()){
-            
-            std::queue<std::string>lista2 = aux.front();
-
-            if(lista2.front()==id){
-                
-                std::chrono::milliseconds(10);
-                std::cout << BOLDBLUE << "[HILO " << RESET<< lista2.front();
-                lista2.pop();
-                std::cout << BOLDBLUE << " inicio: "<<RESET <<lista2.front();
-                lista2.pop();
-                std::cout << BOLDBLUE << " - final: "<<RESET <<lista2.front()<< BOLDBLUE<<"]::";
-                lista2.pop();
-                std::cout << BOLDBLUE << "linea "<<RESET <<lista2.front();
-                lista2.pop();
-                std::cout << BOLDBLUE << ":: ..." <<RESET<<lista2.front();
-                lista2.pop();
-                std::cout << " "  <<RED <<lista2.front();
-                lista2.pop();
-                
-                std::cout <<" " << RESET<<lista2.front()<< BOLDBLUE << " ... "<< std::endl;
-                lista2.pop();
-                   
-            }
-            aux.pop();
-            i++;
-        
-        }
-}
 
 
 /******************************************************
 Metodo que ejecuta cada hilo para buscar la palabra en distintas partes del fichero
 
 *****************************************************/
-void SSOOIIGLE :: SearchWord(int id ,char* p_palabra ,char* p_fichero)
+void SSOOIIGLE :: SearchWord(std::string p_palabra ,char* p_fichero)
 {   
     std::vector<std::list<std::string>*>    h_vector;
     std::string                             cadena,palabra;
@@ -181,12 +149,10 @@ void SSOOIIGLE :: SearchWord(int id ,char* p_palabra ,char* p_fichero)
                 std::string     word= Simbols(palabra);
                 if(word == p_palabra){
                     std::string                 posterior;
-                    std::string                 identificador       =std::__cxx11::to_string(id);
                     std::string                 numero_linea         =std::__cxx11::to_string(linea);
                     std::queue<std::string>     cola_hilo;
                     p >> posterior;
                     //Introducimos los datos de la palabra encontrada en una cola 
-                        cola_hilo.push(identificador);
                         cola_hilo.push(numero_linea);
                         cola_hilo.push(anterior);
                         cola_hilo.push(word);
@@ -194,24 +160,22 @@ void SSOOIIGLE :: SearchWord(int id ,char* p_palabra ,char* p_fichero)
 
                     //Seccion Critica. Introducimos a la cola general la cola con los datos de la palabra
                         g_semaforo.lock();
-                        g_queue.push(cola_hilo);
+                        cliente.Push(cola_hilo);
                         g_semaforo.unlock();
                   
                     if (posterior==word){
                         p >> posterior;
                         anterior        =word;
-                        identificador   =std::__cxx11::to_string(id);
                         numero_linea     =std::__cxx11::to_string(linea);
                         std::queue<std::string>cola_hilo;
                         //Introducimos los datos de la palabra encontrada en una cola
-                            cola_hilo.push(identificador);
                             cola_hilo.push(numero_linea);
                             cola_hilo.push(anterior);
                             cola_hilo.push(word);
                             cola_hilo.push(posterior);
                         //Seccion Critica. Introducimos a la cola general la cola con los datos de la palabra
                             g_semaforo.lock();
-                            c.g_queue.push(cola_hilo);
+                            cliente.Push(cola_hilo);
                             g_semaforo.unlock(); 
                     }
                 }
@@ -223,27 +187,6 @@ void SSOOIIGLE :: SearchWord(int id ,char* p_palabra ,char* p_fichero)
     
     
 }
-/******************************************************
-Metodo para mostrar un mensaje de bienvenida
-
-*****************************************************/
-void SSOOIIGLE :: messageWelcome(){
-    std::cout <<BOLDBLUE << "SS" << BOLDRED << "O" << BOLDYELLOW << "O"<< BOLDBLUE << "II" << BOLDGREEN << "GL" << BOLDRED << "E" << RESET;
-    std::cout <<RESET<< "::BIENVENIDO A TU BUSCADOR::" << BOLDBLUE << "SS" << BOLDRED << "O" << BOLDYELLOW << "O";
-    std::cout << BOLDBLUE << "II" << BOLDGREEN << "GL" << BOLDRED << "E\n" << RESET << std::endl;
-    std::cout << BOLDBLUE << " "  << std::endl; 
-}
-/******************************************************
-Metodo para mostrar un mensaje de despedida
-
-*****************************************************/
-void SSOOIIGLE :: messageEnd(){
-    std::cout << BOLDBLUE << " "  << std::endl;
-    std::cout <<BOLDBLUE << "SS" << BOLDRED << "O" << BOLDYELLOW << "O"<< BOLDBLUE << "II" << BOLDGREEN << "GL" << BOLDRED << "E" << RESET;
-    std::cout << RESET <<"::GRACIAS POR SU CONFIANZA::" << BOLDBLUE << "SS" << BOLDRED << "O" << BOLDYELLOW << "O" ;
-    std::cout << BOLDBLUE << "II" << BOLDGREEN << "GL" << BOLDRED << "E" << RESET << std::endl; 
-}
-
 
 /******************************************************
 Metodo principal
@@ -254,24 +197,12 @@ void SSOOIIGLE :: Busqueda()
     
     std::vector<std::thread>        v_hilos;
     std::ifstream                   in ;
-    
-    if (argc != 4)
-    {
-        fprintf(stderr, "ERROR! El numero de argumentos introducidos es incorrecto Prueba: ./exec/SSOOIIGLE <nombre_fichero> <palabra> <numero_hilos> ");
-        return EXIT_FAILURE;
-    }
-
-    char*   p_palabra           = g_palabra;
-    char*   p_fichero           = argv[1]; //cambiar a vector 
-    
+      
     
     //Creacion de hilos , y llamada diviendo el fichero dependiendo de los hilos 
-    SearchWord(p_palabra,p_fichero);
+    SearchWord(g_palabra,"utils/books/21_leyes_del_liderazgo.txt");
 
-    for(int i=0;i<hilos;i++){
-        std::string j =std::__cxx11::to_string(i);
-        Print(j,g_queue.size());
-    }
+    
     messageEnd();
-    return EXIT_SUCCESS; 
+    
 }
