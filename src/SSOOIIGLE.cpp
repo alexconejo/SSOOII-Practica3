@@ -27,7 +27,6 @@
 #include <clocale>  //std::setlocale
 #include <atomic>
 #pragma once
-#include "../src/Main.cpp"
 #include "../include/color.h" 
 
 
@@ -38,11 +37,11 @@
 class SSOOIIGLE {
     private:
         std::mutex g_semaforo;
-        std::queue <Cliente> peticiones;
+        Cliente cliente;
         std::string g_palabra;
 
     public:
-        SSOOIIGLE (std::queue <Cliente> peticiones);
+        SSOOIIGLE (Cliente cliente, std::string g_palabra);
         std::string Simbols(std::string word);
         std::string changeToLowercaseAndEraseSimbols(std::string word);
         std::int16_t CountLines(char* p_fichero );
@@ -53,8 +52,9 @@ class SSOOIIGLE {
         void Busqueda();
 };
 
-SSOOIIGLE :: SSOOIIGLE (std::queue <Cliente> peticiones){
-    this -> peticiones = peticiones;
+SSOOIIGLE :: SSOOIIGLE (Cliente cliente, std::string g_palabra){
+    this -> cliente   = cliente;
+    this -> g_palabra = g_palabra; 
 }
 /******************************************************
 Metodo para limpiar las palabras de signos de puntuacion delanteros
