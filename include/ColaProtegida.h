@@ -20,7 +20,6 @@ class ColaProtegida
     private: 
         std::mutex semaforo;
         std::queue <Cliente> protected_queue;
-        bool empty;
         
     public:
         void Push(Cliente pl);
@@ -28,4 +27,5 @@ class ColaProtegida
         Cliente Front();
         bool Empty();
         void Recharge(int saldo);
+        int Size();
     };

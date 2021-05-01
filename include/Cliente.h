@@ -19,6 +19,7 @@ class Cliente
         std::string category;
         int creditos;
         std::queue<std::queue<std::string>> client_queue;
+        bool found;
    
     public:
         Cliente(int client_id, std::string category,int creditos);
@@ -27,7 +28,10 @@ class Cliente
         void SetClientId(int id);
         void SetCategory(std::string c);  
         int GetCreditos();
-        void SetCreditos(int c);    
+        void SetCreditos(int c);   
+        bool GetFound();
+        void SetFound(bool b);
         void Push(std::queue<std::string> l_queue);
         std::queue<std::string> Pop();
+        bool Empty();
     };

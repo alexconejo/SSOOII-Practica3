@@ -42,6 +42,12 @@ void Cliente::SetCreditos(int c){
     creditos = c;
 }
 
+bool Cliente::GetFound(){return found;}
+
+void Cliente::SetFound(bool b){
+    found = b;
+}
+
 void Cliente::Push(std::queue<std::string> l_queue){
     client_queue.push(l_queue);  
 }
@@ -50,6 +56,10 @@ std::queue<std::string> Cliente::Pop(){
     std::queue<std::string> frontelement = client_queue.front();
     client_queue.pop();
     return frontelement;  
+}
+
+bool Cliente::Empty(){
+    return client_queue.empty();
 }
 
 
