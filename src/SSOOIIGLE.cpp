@@ -1,4 +1,5 @@
-/******************************************************
+
+/******************
 * Proyecto:                Práctica 2 de Sistemas Operativos II
 * 
 * Nombre de la Clase:      SSOOIIGLE.cPP
@@ -9,7 +10,7 @@
 * Proposito:               Busqueda de palabras en un fichero de texto , y mostrar por pantalla con varios datos mas  
 *                          
 * 
- ******************************************************/
+ ******************/
 
 #include <iostream>
 #include <thread>
@@ -53,16 +54,14 @@ class SSOOIIGLE {
         void Busqueda();
 };
 
-SSOOIIGLE :: SSOOIIGLE (Cliente cliente, std::string g_palabra){
-    this -> cliente   = cliente;
-    this -> g_palabra = g_palabra; 
-}
-/******************************************************
+SSOOIIGLE :: SSOOIIGLE (Cliente c, std::string p) : cliente(c), g_palabra(p){}
+
+/******************
 Metodo para limpiar las palabras de signos de puntuacion delanteros
 
 (¡ ¿ << "")
 
-*****************************************************/
+*******************/
 std::string SSOOIIGLE :: Simbols(std::string word){
     if(!isalpha(word[0])){
         
@@ -75,12 +74,12 @@ std::string SSOOIIGLE :: Simbols(std::string word){
     }
     return word;
 }
-/******************************************************
+/******************
 Metodo para limpiar las palabras de signos de puntuacion traseros
 
 (. , : ; ! ? )
 
-*****************************************************/
+*******************/
 std::string SSOOIIGLE :: changeToLowercaseAndEraseSimbols(std::string word){
     std::for_each(word.begin(), word.end(), [](char & c){
         c = ::tolower(c);
@@ -95,10 +94,10 @@ std::string SSOOIIGLE :: changeToLowercaseAndEraseSimbols(std::string word){
 
     return word;
 }
-/******************************************************
+/******************
 Metodo para contar las lineas de un fichero
 
-*****************************************************/
+*******************/
 std::int16_t SSOOIIGLE :: CountLines(char* p_fichero ){
     std::ifstream       on ;
     std::string         cadena;
@@ -116,16 +115,16 @@ std::int16_t SSOOIIGLE :: CountLines(char* p_fichero ){
 }
 
 
-/******************************************************
+/******************
 Metodo para imprimir y ordenar la salida
 
-*****************************************************/
+*******************/
 
 
-/******************************************************
+/******************
 Metodo que ejecuta cada hilo para buscar la palabra en distintas partes del fichero
 
-*****************************************************/
+*******************/
 void SSOOIIGLE :: SearchWord(std::string p_palabra ,char* p_fichero)
 {   
     std::vector<std::list<std::string>*>    h_vector;
@@ -188,12 +187,12 @@ void SSOOIIGLE :: SearchWord(std::string p_palabra ,char* p_fichero)
     
 }
 
-/******************************************************
+/******************
 Metodo principal
-*****************************************************/
+*******************/
 void SSOOIIGLE :: Busqueda()
 {  
-    messageWelcome();
+   
     
     std::vector<std::thread>        v_hilos;
     std::ifstream                   in ;
@@ -201,8 +200,7 @@ void SSOOIIGLE :: Busqueda()
     
     //Creacion de hilos , y llamada diviendo el fichero dependiendo de los hilos 
     SearchWord(g_palabra,"utils/books/21_leyes_del_liderazgo.txt");
+    std::cout<< "hola, el cliente tiene el id " << cliente.GetClientId() <<std::endl;
 
-    
-    messageEnd();
-    
+  
 }
