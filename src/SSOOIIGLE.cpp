@@ -193,7 +193,7 @@ Metodo principal
 *****************************************************/
 void SSOOIIGLE :: Busqueda()
 {  
-    messageWelcome();
+   
     
     std::vector<std::thread>        v_hilos;
     std::ifstream                   in ;
@@ -203,6 +203,6 @@ void SSOOIIGLE :: Busqueda()
     SearchWord(g_palabra,"utils/books/21_leyes_del_liderazgo.txt");
 
     
-    messageEnd();
+    
     
 }
