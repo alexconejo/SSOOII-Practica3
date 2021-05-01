@@ -11,8 +11,7 @@
 #include <condition_variable>
 
 #include "../src/ColaProtegida.cpp" //Incluimos la cola protegida
-#include "../src/Cliente.cpp" //Incluimos el cliente 
-#include "../src/SSOOIIGLE.cpp" //Incluimos el cliente gratuito
+//#include "../src/SSOOIIGLE.cpp" //Incluimos el cliente gratuito
 
 #define NUMCLIENTESPL 10
 #define N 4
@@ -35,7 +34,7 @@ void banco()
         cv.wait(ul,[]{return !peticiones_banco.Empty();});
         std::this_thread::sleep_for(std::chrono::seconds(1));
         peticiones_banco.Recharge(1000);
-        Cliente (peticiones_banco.Front().GetClientId(), peticiones_banco.Front().GetCategory());
+        Cliente pl(peticiones_banco.Front().GetClientId(), peticiones_banco.Front().GetCategory(), peticiones_banco.Front().GetCreditos());
         std::cout<<"añadimos dinero al cliente " << pl.GetClientId() << " ahora con saldo: " << pl.GetCategory() <<std::endl;
         peticiones_banco.Pop();      
     }
@@ -45,36 +44,53 @@ void Clientes()
 
     int random;
     std::unique_lock<std::mutex> ul(clientes);
-    cv2.wait(ul,[]{return peticiones.size()<N;});
+    cv2.wait(ul,[]{return peticiones.Size()<N;});
     random = rand() % 10;
+    Cliente aux(0, "", 0);
     if(!clientes_premium.Empty()&& !clientes_gratuitos.Empty()){
         if(random<=7)
         {
             std::cout<<"busqueda de  la cola premium "<<std::endl;
-            peticiones.Push(clientes_premium.Pop());
+            aux.SetClientId(clientes_premium.Front().GetClientId());
+            aux.SetCategory(clientes_premium.Front().GetCategory());
+            aux.SetCreditos(clientes_premium.Front().GetCreditos());
+            clientes_premium.Pop();
+            peticiones.Push(aux);
         }
         else
         {
             std::cout<<"busqueda de  la cola gratis"<<std::endl;
-            peticiones.Push(clientes_gratuitos.Pop());
+            aux.SetClientId(clientes_gratuitos.Front().GetClientId());
+            aux.SetCategory(clientes_gratuitos.Front().GetCategory());
+            aux.SetCreditos(clientes_gratuitos.Front().GetCreditos());
+            clientes_gratuitos.Pop();
+            peticiones.Push(aux);
     }
     }
     else if(clientes_premium.Empty()){
         std::cout<<"busqueda de  la cola gratis con premium vacia"<<std::endl;
-        peticiones.Push(clientes_gratuitos.Pop());
-
+        aux.SetClientId(clientes_gratuitos.Front().GetClientId());
+        aux.SetCategory(clientes_gratuitos.Front().GetCategory());
+        aux.SetCreditos(clientes_gratuitos.Front().GetCreditos());
+        clientes_gratuitos.Pop();
+        peticiones.Push(aux);
     }
     else 
     {
-    std::cout<<"busqueda de  la cola premium con gratis vacia"<<std::endl;
-        peticiones.Push(clientes_premium.Pop());
-    }
-    while(aux.getencontrado()==false){
+        std::cout<<"busqueda de  la cola premium con gratis vacia"<<std::endl;
+        aux.SetClientId(clientes_premium.Front().GetClientId());
+        aux.SetCategory(clientes_premium.Front().GetCategory());
+        aux.SetCreditos(clientes_premium.Front().GetCreditos());
+        clientes_premium.Pop();
+        peticiones.Push(aux);
         
+    }
+    while(aux.GetFound()==false){
+        std::this_thread::sleep_for(std::chrono::seconds(0));
     }
     
 }
-void Busqueda()
+/*void Busqueda()
 {   
 while(1){ 
 
@@ -83,7 +99,7 @@ SSOOIIGLE prueba(peticiones.pop() ,word )
 std::thread hilo(SSOOIIGLE, )
     
 }
-}
+}*/
 
 
 int main()
@@ -118,7 +134,7 @@ int main()
         vhilos.push_back(std::thread(Clientes));
     }
 
-    std::thead(busqueda, peticiones);
+    //std::thead(busqueda, peticiones);
     std::for_each(vhilos.begin(), vhilos.end(), std::mem_fn(&std::thread::join));
     std::this_thread::sleep_for(std::chrono::seconds(10));
 

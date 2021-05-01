@@ -9,7 +9,7 @@
  *                   un método para introducir o sacar datos
  *                   de la cola. 
  * *********************************************************/
-
+#pragma once
 #include "../include/ColaProtegida.h"
 #include <string>
 #include <queue>
@@ -32,7 +32,7 @@ void ColaProtegida::Pop() {
 
 Cliente ColaProtegida::Front() {
     std::unique_lock<std::mutex> ul (semaforo);
-    Cliente pl(protected_queue.front().GetClientId(), protected_queue.front().GetCategory());
+    Cliente pl(protected_queue.front().GetClientId(), protected_queue.front().GetCategory(), protected_queue.front().GetCreditos());
     ul.unlock();
     return pl;
 }
@@ -44,8 +44,17 @@ void ColaProtegida::Recharge(int saldo) {
 }
 
 bool ColaProtegida::Empty() {
+    bool empty;
     std::unique_lock<std::mutex> ul (semaforo);
     empty = protected_queue.empty();
     ul.unlock();
     return empty;
+}
+
+int ColaProtegida::Size(){
+    int size;
+    std::unique_lock<std::mutex> ul (semaforo);
+    size = protected_queue.size();
+    ul.unlock();
+    return size;
 }
