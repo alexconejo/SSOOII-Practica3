@@ -44,8 +44,9 @@ void Print(Cliente cl)
                 
                 std::queue<std::string>lista2 = aux.front();   
                 std::chrono::milliseconds(10);
-                
-                std::cout << BOLDBLUE << "linea "<<RESET <<lista2.front();
+                std::cout << BOLDGREEN << "libro "<<lista2.front() <<RESET ;
+                lista2.pop();
+                std::cout << BOLDBLUE << " linea "<<RESET <<lista2.front();
                 lista2.pop();
                 std::cout << BOLDBLUE << ":: ..." <<RESET<<lista2.front();
                 lista2.pop();
