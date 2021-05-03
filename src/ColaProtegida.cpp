@@ -32,7 +32,7 @@ void ColaProtegida::Pop() {
 
 Cliente ColaProtegida::Front() {
     std::unique_lock<std::mutex> ul (semaforo);
-    Cliente pl(protected_queue.front().GetClientId(), protected_queue.front().GetCategory(), protected_queue.front().GetCreditos());
+    Cliente pl(protected_queue.front().GetClientId(), protected_queue.front().GetCategory(), protected_queue.front().GetCreditos(), protected_queue.front().GetQueue());
     ul.unlock();
     return pl;
 }
