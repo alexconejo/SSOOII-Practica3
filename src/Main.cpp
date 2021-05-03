@@ -14,7 +14,7 @@
 #include "../src/SSOOIIGLE.cpp" //Incluimos el cliente gratuito
 #include "../include/color.h"
 
-#define NUMCLIENTESPL 10
+#define NUMCLIENTESPL 50
 #define N 4
 
 std::condition_variable cv_banco;
@@ -35,17 +35,16 @@ int g_n=0;
 
 void Print(Cliente cl)
 {
-    std::cout << BOLDBLUE << "hola"<<RESET<<std::endl;
     int                                 i       = 0;
     std::queue<std::queue<std::string>> aux     = cl.GetQueue();
-    std::cout<<"cliente aux " <<cl.GetClientId() << "tiene tamanio cola "<< cl.GetQueue().size() <<std::endl;
-    
+   
+    std::cout << BOLDGREEN << "Cliente: " <<BOLDBLUE <<cl.GetClientId()<< BOLDGREEN <<" Tipo: "<<BOLDBLUE <<cl.GetCategory() <<RESET<< std::endl;
 
     while(!aux.empty()){
                 
                 std::queue<std::string>lista2 = aux.front();   
                 std::chrono::milliseconds(10);
-                std::cout << BOLDBLUE << "Cliente: " <<RESET<<cl.GetClientId();
+                
                 std::cout << BOLDBLUE << "linea "<<RESET <<lista2.front();
                 lista2.pop();
                 std::cout << BOLDBLUE << ":: ..." <<RESET<<lista2.front();
@@ -122,9 +121,9 @@ void Clientes()
     while(impresiones.Empty()){}
     while(impresiones.Front().GetClientId()!=aux.GetClientId()){}
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    semaforo_print.lock();
-    //Print(impresiones.Front());
-    semaforo_print.unlock();
+    //semaforo_print.lock();
+    Print(impresiones.Front());
+    //semaforo_print.unlock();
     impresiones.Pop();
 }
 void Busqueda()
@@ -132,7 +131,7 @@ void Busqueda()
     std::unique_lock<std::mutex> ul_server(semaforo_server);
     while(1){ 
         cv_server.wait(ul_server,[]{return !peticiones.Empty();});
-        SSOOIIGLE SSOOIIGLE(peticiones.Front() , "cientos" , p_cv_banco);        std::thread busqueda(&SSOOIIGLE::Busqueda,&SSOOIIGLE);  
+        SSOOIIGLE SSOOIIGLE(peticiones.Front() , "esta" , p_cv_banco);        std::thread busqueda(&SSOOIIGLE::Busqueda,&SSOOIIGLE);  
         busqueda.join();
         Cliente cl(SSOOIIGLE.GetClient().GetClientId(), SSOOIIGLE.GetClient().GetCategory(), SSOOIIGLE.GetClient().GetCreditos(), SSOOIIGLE.GetClient().GetQueue());
         impresiones.Push(cl);

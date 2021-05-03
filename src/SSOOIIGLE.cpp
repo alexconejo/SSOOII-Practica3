@@ -180,10 +180,7 @@ void SSOOIIGLE :: SearchWord(std::string p_palabra ,char* p_fichero)
                                 cliente.SetCreditos(100);
                                 std::this_thread::sleep_for(std::chrono::seconds(1));
                             }
-                            else if(cliente.GetCreditos()==0 && cliente.GetCategory()=="NP"){
-                                std::cout<<"aquí llega" <<std::endl;
-                                 std::cout<<"SIN CREDITOS CRACK" <<std::endl;
-                            }
+                            
                         if (posterior==word && cliente.GetCreditos()>0){
                             p >> posterior;
                             anterior        =word;
@@ -202,7 +199,6 @@ void SSOOIIGLE :: SearchWord(std::string p_palabra ,char* p_fichero)
                                     cliente.SetCreditos(cliente.GetCreditos()-1);
                                 }
                                 if(cliente.GetCreditos()==0 && cliente.GetCategory()=="PL"){
-                                    std::cout<<"cbanco" <<std::endl;
                                     //cv_banco.notify_all();
                                     cliente.SetCreditos(100);
                                     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -210,7 +206,7 @@ void SSOOIIGLE :: SearchWord(std::string p_palabra ,char* p_fichero)
                         }
                     }
                     anterior=palabra;
-                    std::cout<<"añadimos dinero al cliente " << cliente.GetClientId() << " ahora con categoria: " << cliente.GetCategory() << " y creditos " << cliente.GetCreditos()<<std::endl;
+                   
                 }
     
             }
