@@ -27,7 +27,9 @@
 #include <cctype>   //ispunct
 #include <clocale>  //std::setlocale
 #include <atomic>
+#include <condition_variable>
 #pragma once
+#include "../src/Main.cpp"
 #include "../src/Cliente.cpp" //Incluimos el cliente gratuito
 #include "../include/color.h" 
 
@@ -41,9 +43,11 @@ class SSOOIIGLE {
         std::mutex g_semaforo;
         Cliente cliente;
         std::string g_palabra;
+        std::condition_variable &cv_banco;
 
     public:
-        SSOOIIGLE (Cliente cliente, std::string g_palabra);
+        SSOOIIGLE (Cliente cliente, std::string g_palabra, std::condition_variable &cv_banco);
+        Cliente GetClient();
         std::string Simbols(std::string word);
         std::string changeToLowercaseAndEraseSimbols(std::string word);
         std::int16_t CountLines(char* p_fichero );
@@ -54,7 +58,7 @@ class SSOOIIGLE {
         void Busqueda();
 };
 
-SSOOIIGLE :: SSOOIIGLE (Cliente c, std::string p) : cliente(c), g_palabra(p){}
+SSOOIIGLE :: SSOOIIGLE (Cliente c, std::string p, std::condition_variable &b) : cliente(c), g_palabra(p), cv_banco(b){}
 
 /******************
 Metodo para limpiar las palabras de signos de puntuacion delanteros
@@ -73,6 +77,10 @@ std::string SSOOIIGLE :: Simbols(std::string word){
         }
     }
     return word;
+}
+
+Cliente SSOOIIGLE :: GetClient(){
+    return cliente;
 }
 /******************
 Metodo para limpiar las palabras de signos de puntuacion traseros
@@ -134,57 +142,79 @@ void SSOOIIGLE :: SearchWord(std::string p_palabra ,char* p_fichero)
     char*                                   palabras;
     int                                     linea               =0;
     in.open(p_fichero);
-    while (!in.eof()) {
-        
-        while (getline(in,cadena))
-        {
-            linea++;
-            std::string         palabra_limpia     = changeToLowercaseAndEraseSimbols(cadena);
-            std::istringstream  p(palabra_limpia);
-            
-            while(!p.eof()){
-                std::string     palabra;
-                p >> palabra; 
-                std::string     word= Simbols(palabra);
-                if(word == p_palabra){
-                    std::string                 posterior;
-                    std::string                 numero_linea         =std::__cxx11::to_string(linea);
-                    std::queue<std::string>     cola_hilo;
-                    p >> posterior;
-                    //Introducimos los datos de la palabra encontrada en una cola 
-                        cola_hilo.push(numero_linea);
-                        cola_hilo.push(anterior);
-                        cola_hilo.push(word);
-                        cola_hilo.push(posterior);
-
-                    //Seccion Critica. Introducimos a la cola general la cola con los datos de la palabra
-                        g_semaforo.lock();
-                        cliente.Push(cola_hilo);
-                        g_semaforo.unlock();
-                  
-                    if (posterior==word){
+    
+        while (!in.eof()) {
+            while (getline(in,cadena))
+            {
+                linea++;
+                std::string         palabra_limpia     = changeToLowercaseAndEraseSimbols(cadena);
+                std::istringstream  p(palabra_limpia);
+                
+                while(!p.eof() && cliente.GetCreditos() > 0){
+                    std::string     palabra;
+                    p >> palabra; 
+                    std::string     word= Simbols(palabra);
+                    if(word == p_palabra){
+                        std::string                 posterior;
+                        std::string                 numero_linea         =std::__cxx11::to_string(linea);
+                        std::queue<std::string>     cola_hilo;
                         p >> posterior;
-                        anterior        =word;
-                        numero_linea     =std::__cxx11::to_string(linea);
-                        std::queue<std::string>cola_hilo;
-                        //Introducimos los datos de la palabra encontrada en una cola
+                        //Introducimos los datos de la palabra encontrada en una cola 
                             cola_hilo.push(numero_linea);
                             cola_hilo.push(anterior);
                             cola_hilo.push(word);
                             cola_hilo.push(posterior);
+
                         //Seccion Critica. Introducimos a la cola general la cola con los datos de la palabra
                             g_semaforo.lock();
+                            
                             cliente.Push(cola_hilo);
-                            g_semaforo.unlock(); 
+                            
+                            g_semaforo.unlock();
+                            if(cliente.GetCategory()!="PI"){
+                                cliente.SetCreditos(cliente.GetCreditos()-1);
+                            }
+                            if(cliente.GetCreditos()==0 && cliente.GetCategory()=="PL"){
+                                //cv_banco.notify_all();
+                                std::cout<<"cbanco" <<std::endl;
+                                cliente.SetCreditos(100);
+                                std::this_thread::sleep_for(std::chrono::seconds(1));
+                            }
+                            else if(cliente.GetCreditos()==0 && cliente.GetCategory()=="NP"){
+                                std::cout<<"aquí llega" <<std::endl;
+                                 std::cout<<"SIN CREDITOS CRACK" <<std::endl;
+                            }
+                        if (posterior==word && cliente.GetCreditos()>0){
+                            p >> posterior;
+                            anterior        =word;
+                            numero_linea     =std::__cxx11::to_string(linea);
+                            std::queue<std::string>cola_hilo;
+                            //Introducimos los datos de la palabra encontrada en una cola
+                                cola_hilo.push(numero_linea);
+                                cola_hilo.push(anterior);
+                                cola_hilo.push(word);
+                                cola_hilo.push(posterior);
+                            //Seccion Critica. Introducimos a la cola general la cola con los datos de la palabra
+                                g_semaforo.lock();
+                                cliente.Push(cola_hilo);
+                                g_semaforo.unlock(); 
+                                if(cliente.GetCategory()!="PI"){
+                                    cliente.SetCreditos(cliente.GetCreditos()-1);
+                                }
+                                if(cliente.GetCreditos()==0 && cliente.GetCategory()=="PL"){
+                                    std::cout<<"cbanco" <<std::endl;
+                                    //cv_banco.notify_all();
+                                    cliente.SetCreditos(100);
+                                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                                }
+                        }
                     }
+                    anterior=palabra;
+                    std::cout<<"añadimos dinero al cliente " << cliente.GetClientId() << " ahora con categoria: " << cliente.GetCategory() << " y creditos " << cliente.GetCreditos()<<std::endl;
                 }
-                anterior=palabra;
+    
             }
- 
         }
-    }
-    
-    
 }
 
 /******************
@@ -200,5 +230,5 @@ void SSOOIIGLE :: Busqueda()
     
     //Creacion de hilos , y llamada diviendo el fichero dependiendo de los hilos 
     SearchWord(g_palabra,"utils/books/21_leyes_del_liderazgo.txt");
-    std::cout<<"cliente " <<cliente.GetClientId() << " ha llegado aquí" <<std::endl;
+    //std::cout<<"cliente " <<cliente.GetClientId() << "tiene tamanio cola "<< cliente.GetQueue().size() <<std::endl;
 }
