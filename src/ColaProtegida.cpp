@@ -39,7 +39,7 @@ Cliente ColaProtegida::Front() {
 
 void ColaProtegida::Recharge(int saldo) {
     std::unique_lock<std::mutex> ul (semaforo);
-    //protected_queue.front().SetSaldo(saldo);
+    protected_queue.front().SetCreditos(saldo);
     ul.unlock();
 }
 

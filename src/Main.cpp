@@ -23,9 +23,14 @@ std::condition_variable cv_clientes;
 std::condition_variable cv_server;
 std::mutex semaforo_clientes;
 std::mutex semaforo_banco;
-std::mutex semaforo_server;
+
 std::mutex semaforo_print;
+std::mutex semaforo_sistema_pago;
+std::mutex semaforo_busqueda;
+std::mutex &p_semaforo_sistema_pago = semaforo_sistema_pago;
+std::mutex &p_semaforo_busqueda     = semaforo_busqueda;
 ColaProtegida peticiones_banco;
+ColaProtegida &p_peticiones_banco = peticiones_banco;
 ColaProtegida clientes_premium;
 ColaProtegida clientes_gratuitos;
 ColaProtegida peticiones;
@@ -37,15 +42,15 @@ void Print(Cliente cl)
 {
     int                                 i       = 0;
     std::queue<std::queue<std::string>> aux     = cl.GetQueue();
-   
+    std::cout  << " "<<std::endl;
     std::cout << BOLDGREEN << "Cliente: " <<BOLDBLUE <<cl.GetClientId()<< BOLDGREEN <<" Tipo: "<<BOLDBLUE <<cl.GetCategory() <<RESET<< std::endl;
 
     while(!aux.empty()){
                 
                 std::queue<std::string>lista2 = aux.front();   
-                std::chrono::milliseconds(10);
-                
-                std::cout << BOLDBLUE << "linea "<<RESET <<lista2.front();
+                std::cout << BOLDGREEN << " Libro "<< lista2.front()<< RESET;
+                lista2.pop();
+                std::cout << BOLDBLUE << " :: linea "<<RESET <<lista2.front();
                 lista2.pop();
                 std::cout << BOLDBLUE << ":: ..." <<RESET<<lista2.front();
                 lista2.pop();
@@ -60,19 +65,23 @@ void Print(Cliente cl)
 
 void banco()
 {   
+    p_semaforo_busqueda.lock();
+    p_semaforo_sistema_pago.lock();
     while(1){
-        std::cout<<"añadimos dinero al cliente " << impresiones.Front().GetClientId() << " ahora con saldo: " << impresiones.Front().GetCategory() <<std::endl;
+        
         std::unique_lock<std::mutex> ul(semaforo_banco);
-        p_cv_banco.wait(ul,[]{return !peticiones_banco.Empty();});
-        peticiones_banco.Recharge(1000);
-        Cliente pl(peticiones_banco.Front().GetClientId(), peticiones_banco.Front().GetCategory(), peticiones_banco.Front().GetCreditos(), peticiones_banco.Front().GetQueue());
-        std::cout<<"añadimos dinero al cliente " << pl.GetClientId() << " ahora con saldo: " << pl.GetCategory() <<std::endl;
-        peticiones_banco.Pop();      
+        p_cv_banco.wait(ul,[]{return !p_peticiones_banco.Empty();}); 
+        p_peticiones_banco.Recharge(1000);
+        Cliente pl(p_peticiones_banco.Front().GetClientId(), p_peticiones_banco.Front().GetCategory(), p_peticiones_banco.Front().GetCreditos(), p_peticiones_banco.Front().GetQueue());
+        p_semaforo_busqueda.unlock();
+        p_semaforo_sistema_pago.lock();
+        
+        p_peticiones_banco.Pop();      
     }
 }
 void Clientes()
 {   
-
+    
     int random;
     std::unique_lock<std::mutex> ul_clientes(semaforo_clientes);
     cv_clientes.wait(ul_clientes,[]{return peticiones.Size()<N;});
@@ -116,27 +125,43 @@ void Clientes()
         
     }
     
-    cv_server.notify_all();
+    cv_server.notify_one();
 
+    
     while(impresiones.Empty()){}
     while(impresiones.Front().GetClientId()!=aux.GetClientId()){}
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    //semaforo_print.lock();
+    
+    semaforo_print.lock();
     Print(impresiones.Front());
-    //semaforo_print.unlock();
+    semaforo_print.unlock();
     impresiones.Pop();
 }
 void Busqueda()
 {   
+    
+    std::mutex semaforo_server;
     std::unique_lock<std::mutex> ul_server(semaforo_server);
+    std::vector <std::string> v_palabra_aleatoria;
+    int random;
+
+    v_palabra_aleatoria.push_back("esta");
+    v_palabra_aleatoria.push_back("maestro");
+    v_palabra_aleatoria.push_back("moral");
+    v_palabra_aleatoria.push_back("líder");
+    
     while(1){ 
-        cv_server.wait(ul_server,[]{return !peticiones.Empty();});
-        SSOOIIGLE SSOOIIGLE(peticiones.Front() , "esta" , p_cv_banco);        std::thread busqueda(&SSOOIIGLE::Busqueda,&SSOOIIGLE);  
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        cv_server.wait(ul_server,[]{return !peticiones.Empty();}); 
+        random = rand() % 4;
+        SSOOIIGLE SSOOIIGLE(peticiones.Front() , v_palabra_aleatoria[random] , p_cv_banco, p_peticiones_banco, p_semaforo_busqueda, p_semaforo_sistema_pago);
+        peticiones.Pop();        
+        std::thread busqueda(&SSOOIIGLE::Busqueda,&SSOOIIGLE);  
         busqueda.join();
         Cliente cl(SSOOIIGLE.GetClient().GetClientId(), SSOOIIGLE.GetClient().GetCategory(), SSOOIIGLE.GetClient().GetCreditos(), SSOOIIGLE.GetClient().GetQueue());
         impresiones.Push(cl);
-        peticiones.Pop();
+        
         cv_clientes.notify_one();
+        
     }
 }
 
@@ -144,8 +169,9 @@ void Busqueda()
 int main()
 {   
     std::vector<std::thread> vhilos;
+    std::vector<std::thread> vhilos_busqueda;
     int random;
-
+    
 
     for (int i= 0; i<NUMCLIENTESPL;i++){
         random = rand() % 3;
@@ -175,11 +201,12 @@ int main()
         vhilos.push_back(std::thread(Clientes));
     }
 
-    std::thread b(Busqueda);
-    //std::thread m_banco(banco);
-    b.detach();
-    //m_banco.detach();
+    for(int i =0; i<4; i++){
+        vhilos_busqueda.push_back(std::thread(Busqueda));
+    }
+    std::thread m_banco(banco);
+    m_banco.detach();
     std::for_each(vhilos.begin(), vhilos.end(), std::mem_fn(&std::thread::join));
-    std::cout<<"variable de condicion" <<std::endl;
+    std::for_each(vhilos_busqueda.begin(), vhilos_busqueda.end(), std::mem_fn(&std::thread::detach));
     return EXIT_SUCCESS;
 }

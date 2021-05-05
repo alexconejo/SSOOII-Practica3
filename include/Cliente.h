@@ -20,6 +20,7 @@ class Cliente
         int creditos;
         std::queue<std::queue<std::string>> client_queue;
         bool found = false;
+
    
     public:
         Cliente(int client_id, std::string category,int creditos, std::queue<std::queue<std::string>> client_queue);
