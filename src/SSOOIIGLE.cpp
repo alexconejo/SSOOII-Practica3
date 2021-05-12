@@ -160,6 +160,7 @@ void SSOOIIGLE :: SearchWord(std::string p_palabra ,char* p_fichero)
                         std::queue<std::string>     cola_hilo;
                         p >> posterior;
                         //Introducimos los datos de la palabra encontrada en una cola 
+                            cola_hilo.push(p_fichero);
                             cola_hilo.push(numero_linea);
                             cola_hilo.push(anterior);
                             cola_hilo.push(word);
@@ -187,6 +188,7 @@ void SSOOIIGLE :: SearchWord(std::string p_palabra ,char* p_fichero)
                             numero_linea     =std::__cxx11::to_string(linea);
                             std::queue<std::string>cola_hilo;
                             //Introducimos los datos de la palabra encontrada en una cola
+                                cola_hilo.push(p_fichero);
                                 cola_hilo.push(numero_linea);
                                 cola_hilo.push(anterior);
                                 cola_hilo.push(word);
@@ -226,5 +228,8 @@ void SSOOIIGLE :: Busqueda()
     
     //Creacion de hilos , y llamada diviendo el fichero dependiendo de los hilos 
     SearchWord(g_palabra,"utils/books/21_leyes_del_liderazgo.txt");
+    SearchWord(g_palabra,"utils/books/17_leyes_del_trabajo_en_equipo.txt");
+    SearchWord(g_palabra,"utils/books/Actitud_de_vencedor.txt");
+    SearchWord(g_palabra,"utils/books/Vive_tu_sueño.txt");
     //std::cout<<"cliente " <<cliente.GetClientId() << "tiene tamanio cola "<< cliente.GetQueue().size() <<std::endl;
 }
