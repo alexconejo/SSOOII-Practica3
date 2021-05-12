@@ -1,16 +1,16 @@
+/***********************************************************
+ * Project         : Practica 3 de Sistemas Operativos II
+ * 
+ * Program Name    : SSOOIIGLE.cpp
+ * 
+ * Author          : Álex Conejo y César Braojos
+ * 
+ * Purpose         : Busqueda de palabras para un cliente en
+ *                   los distintos libros que tenemos en la 
+ *                   carpeta "utils/".
+ *  
+ * *********************************************************/
 
-/******************
-* Proyecto:                Práctica 2 de Sistemas Operativos II
-* 
-* Nombre de la Clase:      SSOOIIGLE.cPP
-* 
-* Autor:                   César Braojos Corroto
-* 
-*  
-* Proposito:               Busqueda de palabras en un fichero de texto , y mostrar por pantalla con varios datos mas  
-*                          
-* 
- ******************/
 
 #include <iostream>
 #include <thread>
@@ -44,9 +44,12 @@ class SSOOIIGLE {
         Cliente cliente;
         std::string g_palabra;
         std::condition_variable &cv_banco;
+        ColaProtegida &peticiones_banco;
+        std::mutex &semaforo_busqueda;
+        std::mutex &semaforo_sistema_pago;
 
     public:
-        SSOOIIGLE (Cliente cliente, std::string g_palabra, std::condition_variable &cv_banco);
+        SSOOIIGLE (Cliente cliente, std::string g_palabra, std::condition_variable &cv_banco, ColaProtegida &peticiones_banco, std::mutex &semaforo_busqueda, std::mutex &semaforo_sistema_pago);
         Cliente GetClient();
         std::string Simbols(std::string word);
         std::string changeToLowercaseAndEraseSimbols(std::string word);
@@ -58,7 +61,7 @@ class SSOOIIGLE {
         void Busqueda();
 };
 
-SSOOIIGLE :: SSOOIIGLE (Cliente c, std::string p, std::condition_variable &b) : cliente(c), g_palabra(p), cv_banco(b){}
+SSOOIIGLE :: SSOOIIGLE (Cliente c, std::string p, std::condition_variable &b,ColaProtegida &p_pb, std::mutex &p_sb, std::mutex&p_ssp) : cliente(c), g_palabra(p), cv_banco(b), peticiones_banco(p_pb), semaforo_busqueda(p_sb), semaforo_sistema_pago(p_ssp){}
 
 /******************
 Metodo para limpiar las palabras de signos de puntuacion delanteros
@@ -176,10 +179,13 @@ void SSOOIIGLE :: SearchWord(std::string p_palabra ,char* p_fichero)
                                 cliente.SetCreditos(cliente.GetCreditos()-1);
                             }
                             if(cliente.GetCreditos()==0 && cliente.GetCategory()=="PL"){
-                                //cv_banco.notify_all();
-                                std::cout<<"cbanco" <<std::endl;
-                                cliente.SetCreditos(100);
-                                std::this_thread::sleep_for(std::chrono::seconds(1));
+                            std::cout << BOLDBLUE << "[CLIENTE: "  <<cliente.GetClientId()<<  "]"<< RESET<<" Necesita creditos" << std::endl;
+                              peticiones_banco.Push(cliente);
+                                cv_banco.notify_one();
+                                semaforo_busqueda.lock();
+                                cliente.SetCreditos(peticiones_banco.Front().GetCreditos());
+                                semaforo_sistema_pago.unlock();;
+                                
                             }
                             
                         if (posterior==word && cliente.GetCreditos()>0){
@@ -201,9 +207,15 @@ void SSOOIIGLE :: SearchWord(std::string p_palabra ,char* p_fichero)
                                     cliente.SetCreditos(cliente.GetCreditos()-1);
                                 }
                                 if(cliente.GetCreditos()==0 && cliente.GetCategory()=="PL"){
-                                    //cv_banco.notify_all();
-                                    cliente.SetCreditos(100);
-                                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                                std::cout << BOLDBLUE << "[CLIENTE: "  <<cliente.GetClientId()<<  "]"<< RESET<<" Necesita creditos" << std::endl;
+                                  peticiones_banco.Push(cliente);
+                                cv_banco.notify_one();
+                                semaforo_busqueda.lock();
+                                cliente.SetCreditos(peticiones_banco.Front().GetCreditos());
+                                semaforo_sistema_pago.unlock();
+                                    
+                                    
+                                    
                                 }
                         }
                     }
@@ -224,7 +236,6 @@ void SSOOIIGLE :: Busqueda()
     
     std::vector<std::thread>        v_hilos;
     std::ifstream                   in ;
-      
     
     //Creacion de hilos , y llamada diviendo el fichero dependiendo de los hilos 
     SearchWord(g_palabra,"utils/books/21_leyes_del_liderazgo.txt");

@@ -68,6 +68,3 @@ std::queue<std::string> Cliente::Pop(){
 bool Cliente::Empty(){
     return client_queue.empty();
 }
-
-
-
