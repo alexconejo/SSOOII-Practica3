@@ -47,7 +47,7 @@ SemCounter Sem(3);
 std::mutex &p_semaforo_sistema_pago = semaforo_sistema_pago;
 std::mutex &p_semaforo_busqueda     = semaforo_busqueda;
 
-//CREAMOS LAS COLAS PROTEGIDAS colas en las cuales se añade con semaforos)//
+//CREAMOS LAS COLAS PROTEGIDAS (colas en las cuales se añade con semaforos)//
 ColaProtegida peticiones_banco;
 ColaProtegida &p_peticiones_banco = peticiones_banco;
 ColaProtegida clientes_premium;
@@ -61,6 +61,7 @@ ColaProtegida impresiones;
 Metodo para imprimir la cola de cada objeto cliente
 
 Este metodo imprime en un fichero pero descomentando el "while " lo podriamos ver por pantalla
+
 ******************/
 void Print(Cliente cl)
 {
@@ -229,13 +230,7 @@ void Busqueda()
         std::thread busqueda(&SSOOIIGLE::Busqueda,&SSOOIIGLE);  
         busqueda.join();
         Cliente cl(SSOOIIGLE.GetClient().GetClientId(), SSOOIIGLE.GetClient().GetCategory(), SSOOIIGLE.GetClient().GetCreditos(), SSOOIIGLE.GetClient().GetQueue());
-        impresiones.Push(cl);
-
-
-        
-
-        
-        
+        impresiones.Push(cl); 
     }
 }
 
