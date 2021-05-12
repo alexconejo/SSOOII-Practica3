@@ -230,7 +230,8 @@ void Busqueda()
         std::thread busqueda(&SSOOIIGLE::Busqueda,&SSOOIIGLE);  
         busqueda.join();
         Cliente cl(SSOOIIGLE.GetClient().GetClientId(), SSOOIIGLE.GetClient().GetCategory(), SSOOIIGLE.GetClient().GetCreditos(), SSOOIIGLE.GetClient().GetQueue());
-        impresiones.Push(cl); 
+        impresiones.Push(cl);
+
     }
 }
 
