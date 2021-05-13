@@ -23,9 +23,9 @@ Este comando se encargar de eliminar las carpetas y archivos creados en la ejecu
 
     $~make test
   
- Estos comandos se  encargan de la ejecución del programa que vas a  ejecutar.
+ Estos comandos se encargan de la ejecución del programa que vas a ejecutar.
  
-El orden correcto de ejecucion seria 
+El orden correcto de ejecución sería 
     
     $~make
     $~make test
