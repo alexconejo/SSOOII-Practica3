@@ -1,3 +1,14 @@
+/***********************************************************
+ * Project         : Practica 3 de Sistemas Operativos II
+ * 
+ * Program Name    : Main.cpp
+ * 
+ * Author          : Extraida de la UCLM.
+ * 
+ * Purpose         : Libreria del semaforo contador
+ *                   
+ *                    
+ * *********************************************************/
 #include <iostream>
 #include <mutex>
 #include <thread>

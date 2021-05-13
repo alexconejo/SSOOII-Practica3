@@ -6,9 +6,10 @@
  * Author          : Álex Conejo y César Braojos
  * 
  * Purpose         : Método principal donde se realizan las 
- *                   peticiones de los clientes y se administra
+ *                   g_request de los clientes y se administra
  *                   el servidor y el sistema de pago con un
  *                   banco. 
+ * 
  * *********************************************************/
 
 #include <iostream>
@@ -24,216 +25,41 @@
 #include <condition_variable>
 #pragma once
 #include "../src/ColaProtegida.cpp" //Incluimos la cola protegida
-#include "../src/SSOOIIGLE.cpp"     //Incluimos el cliente gratuito
-#include "../src/SemCounter2.cpp"   //Incluimos el cliente gratuito
-#include "../include/color.h"
+#include "../src/SSOOIIGLE.cpp"     //Incluimos la clase busqueda
+#include "../src/SemCounter2.cpp"   //Incluimos la clase para los semaoforos contadores
+#include "../include/color.h"       //Incluimos la libreria de colores
 
 #define NUMCLIENTESPL 50
 #define N 4
 
 //CREAMOS LAS VARIABLES DE CONDICION//
-std::condition_variable cv_banco;
-std::condition_variable &p_cv_banco = cv_banco;
-std::condition_variable cv_server;
+std::condition_variable g_cv_banc;
+std::condition_variable &p_cv_banc = g_cv_banc;
+std::condition_variable g_cv_server;
 
-
-//CREAMOS LOS SEMAFOROS NECESARIOS//
-std::mutex semaforo_banco;
-std::mutex semaforo_clientes;
-std::mutex semaforo_print;
-std::mutex semaforo_sistema_pago;
-std::mutex semaforo_busqueda;
+//Creamos los semaforos//
+std::mutex g_banc_mutex;
+std::mutex g_client_mutex;
+std::mutex g_print_mutex;
+std::mutex g_pay_system_mutex;
+std::mutex g_search_mutex;
 SemCounter Sem(3);
-std::mutex &p_semaforo_sistema_pago = semaforo_sistema_pago;
-std::mutex &p_semaforo_busqueda     = semaforo_busqueda;
+std::mutex &p_pay_system_mutex = g_pay_system_mutex;
+std::mutex &p_search_mutex = g_search_mutex;
 
-//CREAMOS LAS COLAS PROTEGIDAS (colas en las cuales se añade con semaforos)//
-ColaProtegida peticiones_banco;
-ColaProtegida &p_peticiones_banco = peticiones_banco;
-ColaProtegida clientes_premium;
-ColaProtegida clientes_gratuitos;
-ColaProtegida peticiones;
-ColaProtegida impresiones;
+//Creamos las colas protegidas (colas en las cuales se añade con semaforos) //
+ColaProtegida g_banc_requests;
+ColaProtegida &p_banc_requests = g_banc_requests;
+ColaProtegida g_premium_client;
+ColaProtegida g_free_client;
+ColaProtegida g_request;
+ColaProtegida g_print_request;
 
-
-/******************
- 
-Metodo para imprimir la cola de cada objeto cliente
-
-Este metodo imprime en un fichero pero descomentando el "while " lo podriamos ver por pantalla
-
-******************/
-void Print(Cliente cl)
-{
-    std::string                         filename = "clientes/Cliente_";
-    int                                 i        = 0;
-    std::queue<std::queue<std::string>> aux      = cl.GetQueue();
-
-    filename += std::to_string(cl.GetClientId());
-    std::ofstream file_client (filename);
-
-    std::cout << BOLDBLUE << "[CLIENTE: "  <<cl.GetClientId() <<"] "<<RESET <<" Comienza a imprimir" << std::endl;
-
-    file_client <<"Cliente: "<< cl.GetClientId() << " Tipo: " << cl.GetCategory()<<std::endl;
-
-    while(!aux.empty()){
-                
-                std::queue<std::string>lista2 = aux.front();   
-                std::chrono::milliseconds(10);
-                file_client <<  "libro "<<lista2.front();
-                lista2.pop();
-                file_client << " linea " <<lista2.front();
-                lista2.pop();
-                file_client << ":: ..." <<lista2.front();
-                lista2.pop();
-                file_client << " "  <<lista2.front();
-                lista2.pop();
-                file_client<<" " << lista2.front()<< " ... "<<  std::endl;
-                lista2.pop();     
-                aux.pop();
-            
-            }
-    file_client.close();
-
-    
-    /*
-
-    while(!aux.empty()){
-                
-                std::queue<std::string>lista2 = aux.front();   
-                std::chrono::milliseconds(10);
-                std::cout << BOLDGREEN << "libro "<<lista2.front() <<RESET ;
-                lista2.pop();
-                std::cout << BOLDBLUE << " linea "<<RESET <<lista2.front();
-                lista2.pop();
-                std::cout << BOLDBLUE << ":: ..." <<RESET<<lista2.front();
-                lista2.pop();
-                std::cout << " "  <<RED <<lista2.front();
-                lista2.pop();
-                std::cout <<" " << RESET<<lista2.front()<< BOLDBLUE << " ... "<< RESET<< std::endl;
-                lista2.pop();     
-                aux.pop();
-            
-            }*/
-}
-
-/******************
-
-Servidor Bancario. Este servidor esta siempre arrancando a la espera de peticiones 
-
-******************/
-void banco()
-{   
-    p_semaforo_busqueda.lock();
-    p_semaforo_sistema_pago.lock();
-    while(1){
-        
-        std::unique_lock<std::mutex> ul(semaforo_banco);
-        p_cv_banco.wait(ul,[]{return !p_peticiones_banco.Empty();}); 
-        p_peticiones_banco.Recharge(1000);
-        std::cout << BOLDRED << "[BANCO]" << RESET << " Ha atendido la peticion del " << BOLDBLUE << "cliente " << p_peticiones_banco.Front().GetClientId() <<RESET<< std::endl;
-        Cliente pl(p_peticiones_banco.Front().GetClientId(), p_peticiones_banco.Front().GetCategory(), p_peticiones_banco.Front().GetCreditos(), p_peticiones_banco.Front().GetQueue());
-        p_semaforo_busqueda.unlock();
-        p_semaforo_sistema_pago.lock();
-        
-        p_peticiones_banco.Pop();  
-            
-    }
-}
-/******************
-
-Metodo para organizar e imprimir la informacion de los clientes. Organizamos segun su categoria e imprimimos una vez acaba la busqueda 
-
-******************/
-void Clientes()
-{   
-    
-    int random;
-    random = rand() % 10;
-
-
-    std::queue <std::queue <std::string>> client_queue;
-    Cliente aux(0, "", 0, client_queue);
-    if(!clientes_premium.Empty()&& !clientes_gratuitos.Empty()){
-    
-        if(random<=7)
-        {
-            aux.SetClientId(clientes_premium.Front().GetClientId());
-            aux.SetCategory(clientes_premium.Front().GetCategory());
-            aux.SetCreditos(clientes_premium.Front().GetCreditos());
-            clientes_premium.Pop();
-            peticiones.Push(aux);
-        }
-        else
-        {
-            aux.SetClientId(clientes_gratuitos.Front().GetClientId());
-            aux.SetCategory(clientes_gratuitos.Front().GetCategory());
-            aux.SetCreditos(clientes_gratuitos.Front().GetCreditos());
-            clientes_gratuitos.Pop();
-            peticiones.Push(aux);
-        }
-    }
-    else if(clientes_premium.Empty()){
-        aux.SetClientId(clientes_gratuitos.Front().GetClientId());
-        aux.SetCategory(clientes_gratuitos.Front().GetCategory());
-        aux.SetCreditos(clientes_gratuitos.Front().GetCreditos());
-        clientes_gratuitos.Pop();
-        peticiones.Push(aux);
-    }
-    else 
-    {
-        aux.SetClientId(clientes_premium.Front().GetClientId());
-        aux.SetCategory(clientes_premium.Front().GetCategory());
-        aux.SetCreditos(clientes_premium.Front().GetCreditos());
-        
-        peticiones.Push(aux);
-
-        clientes_premium.Pop();
-        
-    }
-    while(impresiones.Empty()){}
-    while(impresiones.Front().GetClientId()!=aux.GetClientId()){}
-    
-    semaforo_print.lock();
-    Print(impresiones.Front());
-    semaforo_print.unlock();
-    impresiones.Pop();
-}
-/******************
-
-Servidor de busqueda. Lanzamos 4 hilos con este metodo que estan siempre activos a la espera de peticiones de busqueda. 
-
-******************/
-void Busqueda()
-{   
-    
-    std::mutex semaforo_server;
-    std::unique_lock<std::mutex> ul_server(semaforo_server);
-    std::vector <std::string> v_palabra_aleatoria;
-    int random;
-
-    v_palabra_aleatoria.push_back("esta");
-    v_palabra_aleatoria.push_back("maestro");
-    v_palabra_aleatoria.push_back("moral");
-    v_palabra_aleatoria.push_back("líder");
-    
-    
-    while(1){ 
-        
-        cv_server.wait(ul_server,[]{return !peticiones.Empty();}); 
-        Sem.wait();
-        std::cout << BOLDGREEN << "[SERVER] " << RESET<< "Ha atendido la peticion de " << BOLDBLUE << "cliente " << peticiones.Front().GetClientId()<< RESET<< std::endl;
-        random = rand() % 4;
-        SSOOIIGLE SSOOIIGLE(peticiones.Front() , v_palabra_aleatoria[random] , p_cv_banco, p_peticiones_banco, p_semaforo_busqueda, p_semaforo_sistema_pago);
-        peticiones.Pop();   
-        Sem.signal();
-        std::thread busqueda(&SSOOIIGLE::Busqueda,&SSOOIIGLE);  
-        busqueda.join();
-        Cliente cl(SSOOIIGLE.GetClient().GetClientId(), SSOOIIGLE.GetClient().GetCategory(), SSOOIIGLE.GetClient().GetCreditos(), SSOOIIGLE.GetClient().GetQueue());
-        impresiones.Push(cl);
-
-    }
-}
+//Inicializamos los metodos utilizados//
+void Print(Cliente cl);
+void PaySystem();
+void ClientRequest();
+void SearchServer();
 
 /******************
 
@@ -241,46 +67,249 @@ Metodo principal. Creamos los clientes y lanzamos los servidores.
 
 ******************/
 int main()
-{   
-    std::vector<std::thread> vhilos;
-    std::vector<std::thread> vhilos_busqueda;
-    int random;
-   
+{
+    std::vector<std::thread> vthreads;
+    std::vector<std::thread> v_search_threads;
+    int                      random;
 
-    for (int i= 0; i<NUMCLIENTESPL;i++){
+    for (int i = 0; i < NUMCLIENTESPL; i++)
+    {
         random = rand() % 3;
-        std::queue <std::queue <std::string>> client_queue;
-        Cliente c (i, "",0, client_queue);
-        switch (random){
+        std::queue<std::queue<std::string>> client_queue;
+        Cliente c(i, "", 0, client_queue);
+        switch (random)
+        {
             case 0:
                 c.SetCategory("NP");
                 c.SetCreditos(10);
-                clientes_gratuitos.Push(c);
-                
+                g_free_client.Push(c);
                 break;
 
-            case 1:                
+            case 1:
                 c.SetCategory("PL");
                 c.SetCreditos(10);
-                clientes_premium.Push(c);
+                g_premium_client.Push(c);
                 break;
 
             case 2:
                 c.SetCategory("PI");
                 c.SetCreditos(1);
-                clientes_premium.Push(c);
+                g_premium_client.Push(c);
                 break;
         }
-        
-        vhilos.push_back(std::thread(Clientes));
+
+        vthreads.push_back(std::thread(ClientRequest));
     }
 
-    for(int i =0; i<4; i++){
-        vhilos_busqueda.push_back(std::thread(Busqueda));
+    for (int i = 0; i < 4; i++)
+    {
+        v_search_threads.push_back(std::thread(SearchServer));
     }
-    std::thread m_banco(banco);
-    m_banco.detach();
-    std::for_each(vhilos.begin(), vhilos.end(), std::mem_fn(&std::thread::join));
-    std::for_each(vhilos_busqueda.begin(), vhilos_busqueda.end(), std::mem_fn(&std::thread::detach));
+
+    std::thread banc_thread(PaySystem);
+    banc_thread.detach();
+    std::for_each(vthreads.begin(), vthreads.end(), std::mem_fn(&std::thread::join));
+    std::for_each(v_search_threads.begin(), v_search_threads.end(), std::mem_fn(&std::thread::detach));
+
     return EXIT_SUCCESS;
+}
+
+/******************
+
+Servidor Bancario. Este servidor esta siempre arrancando a la espera de g_request 
+
+******************/
+void PaySystem()
+{
+
+    p_search_mutex.lock();
+    p_pay_system_mutex.lock();
+
+    while (1)
+    {
+        std::unique_lock<std::mutex> ul(g_banc_mutex);
+        p_cv_banc.wait(ul, [] { return !p_banc_requests.Empty(); });
+        
+        try
+        {
+            p_banc_requests.Recharge(1000);
+            std::cout << BOLDRED << "[BANCO]" << RESET << " Ha atendido la peticion del " << BOLDBLUE << "cliente " << p_banc_requests.Front().GetClientId() << RESET << std::endl;
+        }
+        catch (std::exception& ex)
+        {
+            std::cout << BOLDYELLOW << "[EXCEPTION] " << RESET << "Ha saltado la excepcion: " << BOLDYELLOW << ex.what() << RESET << " al recargar el cliente." << std::endl;
+        }
+
+        p_search_mutex.unlock();
+        p_pay_system_mutex.lock();
+        p_banc_requests.Pop();
+    }
+}
+
+/******************
+
+Metodo para organizar e imprimir la informacion de los clientes. Organizamos segun su categoria e imprimimos una vez acaba la busqueda 
+
+******************/
+void ClientRequest()
+{
+    int                                 random;
+    std::queue<std::queue<std::string>> client_queue;
+    random = rand() % 10;
+    Cliente aux(0, "", 0, client_queue);
+    if (!g_premium_client.Empty() && !g_free_client.Empty())
+    {
+
+        if (random <= 7)
+        {
+            aux.SetClientId(g_premium_client.Front().GetClientId());
+            aux.SetCategory(g_premium_client.Front().GetCategory());
+            aux.SetCreditos(g_premium_client.Front().GetCreditos());
+            g_premium_client.Pop();
+            g_request.Push(aux);
+        }
+        else
+        {
+            aux.SetClientId(g_free_client.Front().GetClientId());
+            aux.SetCategory(g_free_client.Front().GetCategory());
+            aux.SetCreditos(g_free_client.Front().GetCreditos());
+            g_free_client.Pop();
+            g_request.Push(aux);
+        }
+    }
+    else if (g_premium_client.Empty() && !g_free_client.Empty())
+    {
+        aux.SetClientId(g_free_client.Front().GetClientId());
+        aux.SetCategory(g_free_client.Front().GetCategory());
+        aux.SetCreditos(g_free_client.Front().GetCreditos());
+        g_free_client.Pop();
+        g_request.Push(aux);
+    }
+    else
+    {
+        aux.SetClientId(g_premium_client.Front().GetClientId());
+        aux.SetCategory(g_premium_client.Front().GetCategory());
+        aux.SetCreditos(g_premium_client.Front().GetCreditos());
+
+        g_request.Push(aux);
+
+        g_premium_client.Pop();
+    }
+
+    while (g_print_request.Empty()){
+       
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+    try
+    {
+        while ( g_print_request.Front().GetClientId() != aux.GetClientId()){}
+    }
+    catch (std::exception& ex)
+    {
+        std::cout << BOLDYELLOW << "[EXCEPTION] " << RESET << "Ha saltado la excepcion: " << BOLDYELLOW << ex.what() << RESET << " al comparar la cabecera de la cola g_print_request con el cliente" << std::endl;
+    }
+    
+
+    g_print_mutex.lock();
+    try
+    {
+        Print(g_print_request.Front());
+    }
+    catch (std::exception& ex)
+    {
+        std::cout << BOLDYELLOW << "[EXCEPTION] " << RESET << "Ha saltado la excepcion: " << BOLDYELLOW << ex.what() << RESET << " al imprimir." << std::endl;
+    }
+    
+    g_print_mutex.unlock();
+    g_print_request.Pop();
+}
+
+/******************
+
+Servidor de busqueda. Lanzamos 4 hilos con este metodo que estan siempre activos a la espera de peticiones de busqueda. 
+
+******************/
+void SearchServer()
+{
+    
+    std::mutex                   server_mutex;
+    std::unique_lock<std::mutex> ul_server(server_mutex);
+    std::vector<std::string>     v_random_words;
+    int                          random;
+
+    //Añadimos las palabras que se pueden encontrar aleatoriamente//
+    v_random_words.push_back("esta");
+    v_random_words.push_back("maestro");
+    v_random_words.push_back("moral");
+    v_random_words.push_back("líder");
+
+    while (1)
+    {
+        g_cv_server.wait(ul_server, [] { return !g_request.Empty(); });
+        random = rand() % 4;
+        Sem.wait();
+        std::cout << BOLDGREEN << "[SERVER] " << RESET << "Ha atendido la peticion de " << BOLDBLUE << "cliente " << g_request.Front().GetClientId() << RESET << std::endl;
+        SSOOIIGLE SSOOIIGLE(g_request.Front(), v_random_words[random], p_cv_banc, p_banc_requests, p_search_mutex, p_pay_system_mutex);
+        g_request.Pop();
+        Sem.signal();
+        std::thread busqueda(&SSOOIIGLE::Search, &SSOOIIGLE);
+        busqueda.join();
+        Cliente cl(SSOOIIGLE.GetClient().GetClientId(), SSOOIIGLE.GetClient().GetCategory(), SSOOIIGLE.GetClient().GetCreditos(), SSOOIIGLE.GetClient().GetQueue());
+        g_print_request.Push(cl);
+    }
+}
+
+/******************
+ 
+Metodo para imprimir la cola de cada objeto cliente
+Este metodo imprime la informacion de cada cliente en su fichero /clientes/Cliente_*ID* dejamos la opcion de verlo por pantalla. 
+
+******************/
+void Print(Cliente cl)
+{
+    std::string filename = "clientes/Cliente_";
+    int i = 0;
+    std::queue<std::queue<std::string>> aux = cl.GetQueue();
+
+    filename += std::to_string(cl.GetClientId());
+    std::ofstream file_client(filename);
+
+    std::cout << BOLDBLUE << "[CLIENTE: " << cl.GetClientId() << "] " << RESET << " Comienza a imprimir" << std::endl;
+
+    file_client << "Cliente: " << cl.GetClientId() << " Tipo: " << cl.GetCategory() << std::endl;
+
+    while (!aux.empty())
+    {
+        std::queue<std::string> aux_list = aux.front();
+        std::chrono::milliseconds(10);
+        file_client << "libro " << aux_list.front();
+        aux_list.pop();
+        file_client << " linea " << aux_list.front();
+        aux_list.pop();
+        file_client << ":: ..." << aux_list.front();
+        aux_list.pop();
+        file_client << " " << aux_list.front();
+        aux_list.pop();
+        file_client << " " << aux_list.front() << " ... " << std::endl;
+        aux_list.pop();
+        aux.pop();
+    }
+    
+    file_client.close();
+    
+    /*while(!aux.empty()){        
+        std::queue<std::string>aux_list = aux.front();   
+        std::chrono::milliseconds(10);
+        std::cout << BOLDGREEN << "libro "<<aux_list.front() <<RESET ;
+        aux_list.pop();
+        std::cout << BOLDBLUE << " linea "<<RESET <<aux_list.front();
+        aux_list.pop();
+        std::cout << BOLDBLUE << ":: ..." <<RESET<<aux_list.front();
+        aux_list.pop();
+        std::cout << " "  <<RED <<aux_list.front();
+        aux_list.pop();
+        std::cout <<" " << RESET<<aux_list.front()<< BOLDBLUE << " ... "<< RESET<< std::endl;
+        aux_list.pop();     
+        aux.pop();
+    }*/
 }
