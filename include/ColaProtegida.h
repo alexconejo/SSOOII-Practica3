@@ -18,7 +18,7 @@
 class ColaProtegida 
     {
     private: 
-        std::mutex semaforo;
+        std::mutex mutex_queue;
         std::queue <Cliente> protected_queue;
         
     public:
@@ -26,6 +26,6 @@ class ColaProtegida
         void Pop();   
         Cliente Front();
         bool Empty();
-        void Recharge(int saldo);
+        void Recharge(int credits);
         int Size();
     };

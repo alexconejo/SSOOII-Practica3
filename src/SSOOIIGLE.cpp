@@ -5,7 +5,7 @@
  * 
  * Author          : Álex Conejo y César Braojos
  * 
- * Purpose         : Busqueda de palabras para un cliente en
+ * Purpose         : Search de palabras para un cliente en
  *                   los distintos libros.
  *  
  * *********************************************************/
@@ -37,25 +37,22 @@
 class SSOOIIGLE
 {
 private:
-    std::mutex              semaforo_cola;
+    std::mutex              queue_mutex;
     Cliente                 cliente;
-    std::string             palabra_buscada;
-    std::condition_variable &cv_banco;
-    ColaProtegida           &peticiones_banco;
-    std::mutex              &semaforo_busqueda;
-    std::mutex              &semaforo_sistema_pago;
+    std::string             search_word;
+    std::condition_variable &cv_banc;
+    ColaProtegida           &banc_request;
+    std::mutex              &search_mutex;
+    std::mutex              &pay_system_mutex;
 
 public:
-    SSOOIIGLE(Cliente cliente, std::string palabra_buscada, std::condition_variable &cv_banco, ColaProtegida &peticiones_banco, std::mutex &semaforo_busqueda, std::mutex &semaforo_sistema_pago);
+    SSOOIIGLE(Cliente cliente, std::string search_word, std::condition_variable &cv_banc, ColaProtegida &banc_request, std::mutex &search_mutex, std::mutex &pay_system_mutex);
     Cliente GetClient();
     std::string Simbols(std::string word);
     std::string changeToLowercaseAndEraseSimbols(std::string word);
     std::int16_t CountLines(char *p_fichero);
-    void Print(std::string id, int size);
     void SearchWord(std::string p_palabra, char *p_fichero);
-    void messageWelcome();
-    void messageEnd();
-    void Busqueda();
+    void Search();
 };
 
 /******************
@@ -63,7 +60,7 @@ public:
 Constructor de la clase SSOOIIGLE
 
 *******************/
-SSOOIIGLE ::SSOOIIGLE(Cliente c, std::string p, std::condition_variable &b, ColaProtegida &p_pb, std::mutex &p_sb, std::mutex &p_ssp) : cliente(c), palabra_buscada(p), cv_banco(b), peticiones_banco(p_pb), semaforo_busqueda(p_sb), semaforo_sistema_pago(p_ssp) {}
+SSOOIIGLE ::SSOOIIGLE(Cliente c, std::string p, std::condition_variable &b, ColaProtegida &p_pb, std::mutex &p_sb, std::mutex &p_ssp) : cliente(c), search_word(p), cv_banc(b), banc_request(p_pb), search_mutex(p_sb), pay_system_mutex(p_ssp) {}
 
 /******************
  
@@ -187,11 +184,11 @@ void SSOOIIGLE ::SearchWord(std::string p_palabra, char *p_fichero)
                     cola_hilo.push(posterior);
 
                     //Seccion Critica. Introducimos a la cola general la cola con los datos de la palabra
-                    semaforo_cola.lock();
+                    queue_mutex.lock();
 
                     cliente.Push(cola_hilo);
 
-                    semaforo_cola.unlock();
+                    queue_mutex.unlock();
                     if (cliente.GetCategory() != "PI")
                     {
                         cliente.SetCreditos(cliente.GetCreditos() - 1);
@@ -199,11 +196,11 @@ void SSOOIIGLE ::SearchWord(std::string p_palabra, char *p_fichero)
                     if (cliente.GetCreditos() == 0 && cliente.GetCategory() == "PL")
                     {
                         std::cout << BOLDBLUE << "[CLIENTE: " << cliente.GetClientId() << "]" << RESET << " Necesita creditos" << std::endl;
-                        peticiones_banco.Push(cliente);
-                        cv_banco.notify_one();
-                        semaforo_busqueda.lock();
-                        cliente.SetCreditos(peticiones_banco.Front().GetCreditos());
-                        semaforo_sistema_pago.unlock();
+                        banc_request.Push(cliente);
+                        cv_banc.notify_one();
+                        search_mutex.lock();
+                        cliente.SetCreditos(banc_request.Front().GetCreditos());
+                        pay_system_mutex.unlock();
                     }
 
                     if (posterior == word && cliente.GetCreditos() > 0)
@@ -219,9 +216,9 @@ void SSOOIIGLE ::SearchWord(std::string p_palabra, char *p_fichero)
                         cola_hilo.push(word);
                         cola_hilo.push(posterior);
                         //Seccion Critica. Introducimos a la cola general la cola con los datos de la palabra
-                        semaforo_cola.lock();
+                        queue_mutex.lock();
                         cliente.Push(cola_hilo);
-                        semaforo_cola.unlock();
+                        queue_mutex.unlock();
                         if (cliente.GetCategory() != "PI")
                         {
                             cliente.SetCreditos(cliente.GetCreditos() - 1);
@@ -229,11 +226,11 @@ void SSOOIIGLE ::SearchWord(std::string p_palabra, char *p_fichero)
                         if (cliente.GetCreditos() == 0 && cliente.GetCategory() == "PL")
                         {
                             std::cout << BOLDBLUE << "[CLIENTE: " << cliente.GetClientId() << "]" << RESET << " Necesita creditos" << std::endl;
-                            peticiones_banco.Push(cliente);
-                            cv_banco.notify_one();
-                            semaforo_busqueda.lock();
-                            cliente.SetCreditos(peticiones_banco.Front().GetCreditos());
-                            semaforo_sistema_pago.unlock();
+                            banc_request.Push(cliente);
+                            cv_banc.notify_one();
+                            search_mutex.lock();
+                            cliente.SetCreditos(banc_request.Front().GetCreditos());
+                            pay_system_mutex.unlock();
                         }
                     }
                 }
@@ -248,15 +245,15 @@ void SSOOIIGLE ::SearchWord(std::string p_palabra, char *p_fichero)
 Metodo principal
 
 *******************/
-void SSOOIIGLE ::Busqueda()
+void SSOOIIGLE ::Search()
 {
 
-    std::vector<std::thread> v_hilos;
+    std::vector<std::thread> v_threads;
     std::ifstream            in;
 
     //Creacion de hilos y llamada diviendo el fichero dependiendo de los hilos
-    SearchWord(palabra_buscada, "utils/books/21_leyes_del_liderazgo.txt");
-    SearchWord(palabra_buscada, "utils/books/17_leyes_del_trabajo_en_equipo.txt");
-    SearchWord(palabra_buscada, "utils/books/Actitud_de_vencedor.txt");
-    SearchWord(palabra_buscada, "utils/books/Vive_tu_sueño.txt");
+    SearchWord(search_word, "utils/books/21_leyes_del_liderazgo.txt");
+    SearchWord(search_word, "utils/books/17_leyes_del_trabajo_en_equipo.txt");
+    SearchWord(search_word, "utils/books/Actitud_de_vencedor.txt");
+    SearchWord(search_word, "utils/books/Vive_tu_sueño.txt");
 }
