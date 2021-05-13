@@ -11,7 +11,7 @@ Fecha: 13-Mayo-2021
 
     $~make
 
-Este comando se encargar de ejcutar los comandos para preparar la ejecucion compilando la clase principal. 
+Este comando se encargará de ejecutar los comandos para preparar la ejecución compilando la clase principal. 
     
 **LIMPIEZA CARPETA:**
 
@@ -23,7 +23,7 @@ Este comando se encargar de eliminar las carpetas y archivos creados en la ejecu
 
     $~make test
   
- Estos comandos se  encargan de la ejecucion del programa.quierees ejecutar.
+ Estos comandos se  encargan de la ejecución del programa que vas a  ejecutar.
  
 El orden correcto de ejecucion seria 
     
