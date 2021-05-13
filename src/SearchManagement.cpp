@@ -1,7 +1,7 @@
 /***********************************************************
  * Project         : Practica 3 de Sistemas Operativos II
  * 
- * Program Name    : Main.cpp
+ * Program Name    : SearchManagement.cpp
  * 
  * Author          : Álex Conejo y César Braojos
  * 
@@ -24,21 +24,21 @@
 #include <queue>
 #include <condition_variable>
 #pragma once
-#include "../src/ColaProtegida.cpp" //Incluimos la cola protegida
+#include "../src/ProtectedQueue.cpp" //Incluimos la cola protegida
 #include "../src/SSOOIIGLE.cpp"     //Incluimos la clase busqueda
 #include "../src/SemCounter2.cpp"   //Incluimos la clase para los semaoforos contadores
-#include "../include/color.h"       //Incluimos la libreria de colores
+#include "../include/colour.h"       //Incluimos la libreria de colores
 
-#define NUMCLIENTESPL 50
+#define NUMCLIENTSPL 50
 #define N 4
 
 //CREAMOS LAS VARIABLES DE CONDICION//
-std::condition_variable g_cv_banc;
-std::condition_variable &p_cv_banc = g_cv_banc;
+std::condition_variable g_cv_bank;
+std::condition_variable &p_cv_bank = g_cv_bank;
 std::condition_variable g_cv_server;
 
 //Creamos los semaforos//
-std::mutex g_banc_mutex;
+std::mutex g_bank_mutex;
 std::mutex g_client_mutex;
 std::mutex g_print_mutex;
 std::mutex g_pay_system_mutex;
@@ -48,15 +48,15 @@ std::mutex &p_pay_system_mutex = g_pay_system_mutex;
 std::mutex &p_search_mutex = g_search_mutex;
 
 //Creamos las colas protegidas (colas en las cuales se añade con semaforos) //
-ColaProtegida g_banc_requests;
-ColaProtegida &p_banc_requests = g_banc_requests;
-ColaProtegida g_premium_client;
-ColaProtegida g_free_client;
-ColaProtegida g_request;
-ColaProtegida g_print_request;
+ProtectedQueue g_bank_requests;
+ProtectedQueue &p_bank_request = g_bank_requests;
+ProtectedQueue g_premium_client;
+ProtectedQueue g_free_client;
+ProtectedQueue g_request;
+ProtectedQueue g_print_request;
 
 //Inicializamos los metodos utilizados//
-void Print(Cliente cl);
+void Print(double time, Client cl);
 void PaySystem();
 void ClientRequest();
 void SearchServer();
@@ -72,28 +72,28 @@ int main()
     std::vector<std::thread> v_search_threads;
     int                      random;
 
-    for (int i = 0; i < NUMCLIENTESPL; i++)
+    for (int i = 0; i < NUMCLIENTSPL; i++)
     {
         random = rand() % 3;
         std::queue<std::queue<std::string>> client_queue;
-        Cliente c(i, "", 0, client_queue);
+        Client c(i, "", 0, client_queue);
         switch (random)
         {
             case 0:
                 c.SetCategory("NP");
-                c.SetCreditos(10);
+                c.SetCredits(10);
                 g_free_client.Push(c);
                 break;
 
             case 1:
                 c.SetCategory("PL");
-                c.SetCreditos(10);
+                c.SetCredits(10);
                 g_premium_client.Push(c);
                 break;
 
             case 2:
                 c.SetCategory("PI");
-                c.SetCreditos(1);
+                c.SetCredits(1);
                 g_premium_client.Push(c);
                 break;
         }
@@ -106,8 +106,8 @@ int main()
         v_search_threads.push_back(std::thread(SearchServer));
     }
 
-    std::thread banc_thread(PaySystem);
-    banc_thread.detach();
+    std::thread bank_thread(PaySystem);
+    bank_thread.detach();
     std::for_each(vthreads.begin(), vthreads.end(), std::mem_fn(&std::thread::join));
     std::for_each(v_search_threads.begin(), v_search_threads.end(), std::mem_fn(&std::thread::detach));
 
@@ -127,13 +127,13 @@ void PaySystem()
 
     while (1)
     {
-        std::unique_lock<std::mutex> ul(g_banc_mutex);
-        p_cv_banc.wait(ul, [] { return !p_banc_requests.Empty(); });
+        std::unique_lock<std::mutex> ul(g_bank_mutex);
+        p_cv_bank.wait(ul, [] { return !p_bank_request.Empty(); });
         
         try
         {
-            p_banc_requests.Recharge(1000);
-            std::cout << BOLDRED << "[BANCO]" << RESET << " Ha atendido la peticion del " << BOLDBLUE << "cliente " << p_banc_requests.Front().GetClientId() << RESET << std::endl;
+            p_bank_request.Recharge(1000);
+            std::cout << BOLDRED << "[BANCO]" << RESET << " Ha atendido la peticion del " << BOLDBLUE << "cliente " << p_bank_request.Front().GetClientId() << RESET << std::endl;
         }
         catch (std::exception& ex)
         {
@@ -142,7 +142,7 @@ void PaySystem()
 
         p_search_mutex.unlock();
         p_pay_system_mutex.lock();
-        p_banc_requests.Pop();
+        p_bank_request.Pop();
     }
 }
 
@@ -156,7 +156,7 @@ void ClientRequest()
     int                                 random;
     std::queue<std::queue<std::string>> client_queue;
     random = rand() % 10;
-    Cliente aux(0, "", 0, client_queue);
+    Client aux(0, "", 0, client_queue);
     if (!g_premium_client.Empty() && !g_free_client.Empty())
     {
 
@@ -164,7 +164,7 @@ void ClientRequest()
         {
             aux.SetClientId(g_premium_client.Front().GetClientId());
             aux.SetCategory(g_premium_client.Front().GetCategory());
-            aux.SetCreditos(g_premium_client.Front().GetCreditos());
+            aux.SetCredits(g_premium_client.Front().GetCredits());
             g_premium_client.Pop();
             g_request.Push(aux);
         }
@@ -172,7 +172,7 @@ void ClientRequest()
         {
             aux.SetClientId(g_free_client.Front().GetClientId());
             aux.SetCategory(g_free_client.Front().GetCategory());
-            aux.SetCreditos(g_free_client.Front().GetCreditos());
+            aux.SetCredits(g_free_client.Front().GetCredits());
             g_free_client.Pop();
             g_request.Push(aux);
         }
@@ -181,7 +181,7 @@ void ClientRequest()
     {
         aux.SetClientId(g_free_client.Front().GetClientId());
         aux.SetCategory(g_free_client.Front().GetCategory());
-        aux.SetCreditos(g_free_client.Front().GetCreditos());
+        aux.SetCredits(g_free_client.Front().GetCredits());
         g_free_client.Pop();
         g_request.Push(aux);
     }
@@ -189,13 +189,13 @@ void ClientRequest()
     {
         aux.SetClientId(g_premium_client.Front().GetClientId());
         aux.SetCategory(g_premium_client.Front().GetCategory());
-        aux.SetCreditos(g_premium_client.Front().GetCreditos());
+        aux.SetCredits(g_premium_client.Front().GetCredits());
 
         g_request.Push(aux);
 
         g_premium_client.Pop();
     }
-
+    unsigned t0= clock();
     while (g_print_request.Empty()){
        
     }
@@ -213,7 +213,9 @@ void ClientRequest()
     g_print_mutex.lock();
     try
     {
-        Print(g_print_request.Front());
+        unsigned t1= clock();
+        double time = (double(t1-t0)/CLOCKS_PER_SEC);
+        Print(time,g_print_request.Front());
     }
     catch (std::exception& ex)
     {
@@ -249,12 +251,12 @@ void SearchServer()
         random = rand() % 4;
         Sem.wait();
         std::cout << BOLDGREEN << "[SERVER] " << RESET << "Ha atendido la peticion de " << BOLDBLUE << "cliente " << g_request.Front().GetClientId() << RESET << std::endl;
-        SSOOIIGLE SSOOIIGLE(g_request.Front(), v_random_words[random], p_cv_banc, p_banc_requests, p_search_mutex, p_pay_system_mutex);
+        SSOOIIGLE SSOOIIGLE(g_request.Front(), v_random_words[random], p_cv_bank, p_bank_request, p_search_mutex, p_pay_system_mutex);
         g_request.Pop();
         Sem.signal();
         std::thread busqueda(&SSOOIIGLE::Search, &SSOOIIGLE);
         busqueda.join();
-        Cliente cl(SSOOIIGLE.GetClient().GetClientId(), SSOOIIGLE.GetClient().GetCategory(), SSOOIIGLE.GetClient().GetCreditos(), SSOOIIGLE.GetClient().GetQueue());
+        Client cl(SSOOIIGLE.GetClient().GetClientId(), SSOOIIGLE.GetClient().GetCategory(), SSOOIIGLE.GetClient().GetCredits(), SSOOIIGLE.GetClient().GetQueue());
         g_print_request.Push(cl);
     }
 }
@@ -265,7 +267,7 @@ Metodo para imprimir la cola de cada objeto cliente
 Este metodo imprime la informacion de cada cliente en su fichero /clientes/Cliente_*ID* dejamos la opcion de verlo por pantalla. 
 
 ******************/
-void Print(Cliente cl)
+void Print(double time,Client cl)
 {
     std::string filename = "clientes/Cliente_";
     int i = 0;
@@ -276,8 +278,8 @@ void Print(Cliente cl)
 
     std::cout << BOLDBLUE << "[CLIENTE: " << cl.GetClientId() << "] " << RESET << " Comienza a imprimir" << std::endl;
 
-    file_client << "Cliente: " << cl.GetClientId() << " Tipo: " << cl.GetCategory() << std::endl;
-
+    file_client << "Cliente: " << cl.GetClientId() << " Tipo: " << cl.GetCategory() << " Tiempo: " << time << " segundos" << std::endl;
+    file_client << ""  << std::endl;
     while (!aux.empty())
     {
         std::queue<std::string> aux_list = aux.front();
@@ -296,7 +298,7 @@ void Print(Cliente cl)
     }
     
     file_client.close();
-    
+    std::cout << BOLDBLUE << "[CLIENTE: " << cl.GetClientId() << "] " << RESET << " Ha finalizado" << std::endl;
     /*while(!aux.empty()){        
         std::queue<std::string>aux_list = aux.front();   
         std::chrono::milliseconds(10);

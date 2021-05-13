@@ -1,30 +1,31 @@
 /***********************************************************
  * Project         : Practica 3 de Sistemas Operativos II
  * 
- * Program Name    : ColaProtegida.h
+ * Program Name    : ProctectedQueue.h
  * 
  * Author          : Álex Conejo y César Braojos
  * 
- * Purpose         : Contiene la estructura del objeto ColaProtegida
+ * Purpose         : Contiene la estructura del objeto para 
+ *                   cola protegida ProtectedQueue.
  * *********************************************************/
 
 #include <iostream>
 #include <string>
 #include <mutex>
 #include <queue>
-#include "../src/Cliente.cpp"
+#include "../src/Client.cpp"
 
 
-class ColaProtegida 
+class ProtectedQueue 
     {
     private: 
         std::mutex mutex_queue;
-        std::queue <Cliente> protected_queue;
+        std::queue <Client> protected_queue;
         
     public:
-        void Push(Cliente pl);
+        void Push(Client pl);
         void Pop();   
-        Cliente Front();
+        Client Front();
         bool Empty();
         void Recharge(int credits);
         int Size();

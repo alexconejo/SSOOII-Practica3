@@ -27,9 +27,9 @@
 #include <atomic>
 #include <condition_variable>
 #pragma once
-#include "../src/Main.cpp"
-#include "../src/Cliente.cpp" //Incluimos el cliente gratuito
-#include "../include/color.h"
+#include "../src/SearchManagement.cpp"
+#include "../src/Client.cpp" //Incluimos el cliente gratuito
+#include "../include/colour.h"
 
 #define LIMITE 1000000
 #define NUM_CARACTER_ERASE 1 //Number of characters erase when find symbols
@@ -38,20 +38,20 @@ class SSOOIIGLE
 {
 private:
     std::mutex              queue_mutex;
-    Cliente                 cliente;
+    Client                  client;
     std::string             search_word;
-    std::condition_variable &cv_banc;
-    ColaProtegida           &banc_request;
+    std::condition_variable &cv_bank;
+    ProtectedQueue          &bank_request;
     std::mutex              &search_mutex;
     std::mutex              &pay_system_mutex;
 
 public:
-    SSOOIIGLE(Cliente cliente, std::string search_word, std::condition_variable &cv_banc, ColaProtegida &banc_request, std::mutex &search_mutex, std::mutex &pay_system_mutex);
-    Cliente GetClient();
+    SSOOIIGLE(Client client, std::string search_word, std::condition_variable &cv_bank, ProtectedQueue &bank_request, std::mutex &search_mutex, std::mutex &pay_system_mutex);
+    Client GetClient();
     std::string Simbols(std::string word);
     std::string changeToLowercaseAndEraseSimbols(std::string word);
-    std::int16_t CountLines(char *p_fichero);
-    void SearchWord(std::string p_palabra, char *p_fichero);
+    std::int16_t CountLines(char *p_file);
+    void SearchWord(std::string p_search_word, char *p_file);
     void Search();
 };
 
@@ -60,7 +60,7 @@ public:
 Constructor de la clase SSOOIIGLE
 
 *******************/
-SSOOIIGLE ::SSOOIIGLE(Cliente c, std::string p, std::condition_variable &b, ColaProtegida &p_pb, std::mutex &p_sb, std::mutex &p_ssp) : cliente(c), search_word(p), cv_banc(b), banc_request(p_pb), search_mutex(p_sb), pay_system_mutex(p_ssp) {}
+SSOOIIGLE ::SSOOIIGLE(Client c, std::string p, std::condition_variable &b, ProtectedQueue &p_pb, std::mutex &p_sb, std::mutex &p_ssp) : client(c), search_word(p), cv_bank(b), bank_request(p_pb), search_mutex(p_sb), pay_system_mutex(p_ssp) {}
 
 /******************
  
@@ -88,9 +88,9 @@ Metodo para obtener la informacion de un cliente
 
 *******************/
 
-Cliente SSOOIIGLE ::GetClient()
+Client SSOOIIGLE ::GetClient()
 {
-    return cliente;
+    return client;
 }
 
 /******************
@@ -123,22 +123,22 @@ std::string SSOOIIGLE ::changeToLowercaseAndEraseSimbols(std::string word)
 Metodo para contar las lineas de un fichero
 
 *******************/
-std::int16_t SSOOIIGLE ::CountLines(char *p_fichero)
+std::int16_t SSOOIIGLE ::CountLines(char *p_file)
 {
     std::ifstream on;
-    std::string   cadena;
+    std::string   word_chain;
 
-    on.open(p_fichero);
-    int linea = 0;
+    on.open(p_file);
+    int line = 0;
     while (!on.eof())
     {
-        std::string anterior;
-        while (getline(on, cadena))
+        std::string past_word;
+        while (getline(on, word_chain))
         {
-            linea++;
+            line++;
         }
     }
-    return linea;
+    return line;
 }
 
 /*****************
@@ -146,95 +146,94 @@ std::int16_t SSOOIIGLE ::CountLines(char *p_fichero)
 Metodo que ejecuta cada hilo para buscar la palabra en distintas partes del fichero
 
 *******************/
-void SSOOIIGLE ::SearchWord(std::string p_palabra, char *p_fichero)
+void SSOOIIGLE ::SearchWord(std::string p_search_word, char *p_file)
 {
     std::vector<std::list<std::string> *> h_vector;
-    std::string                           cadena, palabra;
+    std::string                           word_chain, aux_word;
     std::ifstream                         in;
-    std::string                           anterior;
-    char                                  *palabras;
-    int                                   linea = 0;
+    std::string                           past_word;
+    int                                   line = 0;
 
-    in.open(p_fichero);
+    in.open(p_file);
 
     while (!in.eof())
     {
-        while (getline(in, cadena))
+        while (getline(in, word_chain))
         {
-            linea++;
-            std::string palabra_limpia = changeToLowercaseAndEraseSimbols(cadena);
-            std::istringstream p(palabra_limpia);
+            line++;
+            std::string clean_word = changeToLowercaseAndEraseSimbols(word_chain);
+            std::istringstream p(clean_word);
 
-            while (!p.eof() && cliente.GetCreditos() > 0)
+            while (!p.eof() && client.GetCredits() > 0)
             {
-                std::string palabra;
-                p >> palabra;
-                std::string word = Simbols(palabra);
-                if (word == p_palabra)
+                std::string aux_word;
+                p >> aux_word;
+                std::string word = Simbols(aux_word);
+                if (word == p_search_word)
                 {
-                    std::string posterior;
-                    std::string numero_linea = std::__cxx11::to_string(linea);
-                    std::queue<std::string> cola_hilo;
-                    p >> posterior;
+                    std::string next_word;
+                    std::string line_number = std::__cxx11::to_string(line);
+                    std::queue<std::string> thread_queue;
+                    p >> next_word;
                     //Introducimos los datos de la palabra encontrada en una cola
-                    cola_hilo.push(p_fichero);
-                    cola_hilo.push(numero_linea);
-                    cola_hilo.push(anterior);
-                    cola_hilo.push(word);
-                    cola_hilo.push(posterior);
+                    thread_queue.push(p_file);
+                    thread_queue.push(line_number);
+                    thread_queue.push(past_word);
+                    thread_queue.push(word);
+                    thread_queue.push(next_word);
 
                     //Seccion Critica. Introducimos a la cola general la cola con los datos de la palabra
                     queue_mutex.lock();
 
-                    cliente.Push(cola_hilo);
+                    client.Push(thread_queue);
 
                     queue_mutex.unlock();
-                    if (cliente.GetCategory() != "PI")
+                    if (client.GetCategory() != "PI")
                     {
-                        cliente.SetCreditos(cliente.GetCreditos() - 1);
+                        client.SetCredits(client.GetCredits() - 1);
                     }
-                    if (cliente.GetCreditos() == 0 && cliente.GetCategory() == "PL")
+                    if (client.GetCredits() == 0 && client.GetCategory() == "PL")
                     {
-                        std::cout << BOLDBLUE << "[CLIENTE: " << cliente.GetClientId() << "]" << RESET << " Necesita creditos" << std::endl;
-                        banc_request.Push(cliente);
-                        cv_banc.notify_one();
+                        std::cout << BOLDBLUE << "[CLIENTE: " << client.GetClientId() << "]" << RESET << " Necesita creditos" << std::endl;
+                        bank_request.Push(client);
+                        cv_bank.notify_one();
                         search_mutex.lock();
-                        cliente.SetCreditos(banc_request.Front().GetCreditos());
+                        client.SetCredits(bank_request.Front().GetCredits());
                         pay_system_mutex.unlock();
                     }
 
-                    if (posterior == word && cliente.GetCreditos() > 0)
+                    if (next_word == word && client.GetCredits() > 0)
                     {
-                        p >> posterior;
-                        anterior = word;
-                        numero_linea = std::__cxx11::to_string(linea);
-                        std::queue<std::string> cola_hilo;
+                        p >> next_word;
+                        past_word = word;
+                        line_number = std::__cxx11::to_string(line);
+                        std::queue<std::string> thread_queue;
                         //Introducimos los datos de la palabra encontrada en una cola
-                        cola_hilo.push(p_fichero);
-                        cola_hilo.push(numero_linea);
-                        cola_hilo.push(anterior);
-                        cola_hilo.push(word);
-                        cola_hilo.push(posterior);
+                        thread_queue.push(p_file);
+                        thread_queue.push(line_number);
+                        thread_queue.push(past_word);
+                        thread_queue.push(word);
+                        thread_queue.push(next_word);
                         //Seccion Critica. Introducimos a la cola general la cola con los datos de la palabra
                         queue_mutex.lock();
-                        cliente.Push(cola_hilo);
+                        client.Push(thread_queue);
                         queue_mutex.unlock();
-                        if (cliente.GetCategory() != "PI")
+                        if (client.GetCategory() != "PI")
                         {
-                            cliente.SetCreditos(cliente.GetCreditos() - 1);
+                            client.SetCredits(client.GetCredits() - 1);
                         }
-                        if (cliente.GetCreditos() == 0 && cliente.GetCategory() == "PL")
+                        if (client.GetCredits() == 0 && client.GetCategory() == "PL")
                         {
-                            std::cout << BOLDBLUE << "[CLIENTE: " << cliente.GetClientId() << "]" << RESET << " Necesita creditos" << std::endl;
-                            banc_request.Push(cliente);
-                            cv_banc.notify_one();
+                            std::cout << BOLDBLUE << "[CLIENTE: " << client.GetClientId() << "]" << RESET << " Necesita creditos" << std::endl;
+                            bank_request.Push(client);
+                            cv_bank.notify_one();
                             search_mutex.lock();
-                            cliente.SetCreditos(banc_request.Front().GetCreditos());
+                            client.SetCredits(bank_request.Front().GetCredits());
                             pay_system_mutex.unlock();
                         }
                     }
                 }
-                anterior = palabra;
+                past_word = aux_word;
             }
         }
     }

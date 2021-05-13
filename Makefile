@@ -13,15 +13,17 @@ dir:
 	mkdir  clientes
 
 SSOOIIGLE:
-	$(CC)  $(DIRSRC)Main.cpp -o $(DIREXE)Main.cpp -pthread -std=c++11
+	$(CC)  $(DIRSRC)SearchManagement.cpp -o $(DIREXE)SearchManagement -pthread -std=c++11
 
 test:
-	./$(DIREXE)Main.cpp 
+	./$(DIREXE)SearchManagement 
 
 
 clean:
 
 	rm -rf $(DIREXE)
 	rm -rf clientes
-	
+
+
+
 
