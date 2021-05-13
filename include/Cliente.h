@@ -29,10 +29,7 @@ class Cliente
         void SetCategory(std::string c);  
         int GetCreditos();
         void SetCreditos(int c);   
-        bool GetFound();
         std::queue <std::queue <std::string>> GetQueue();
-        void SetQueue(std::queue <std::queue <std::string>> q);
-        void SetFound(bool b);
         void Push(std::queue<std::string> l_queue);
         std::queue<std::string> Pop();
         bool Empty();
